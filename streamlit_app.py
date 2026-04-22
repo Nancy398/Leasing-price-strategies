@@ -43,18 +43,15 @@ lark_df['Room Number'] = lark_df['Room Number'].astype(str).str.strip()
 st.dataframe(leases_df)
 st.dataframe(lark_df)
 
-
-# merged_df = pd.merge(
-#     leases_df, 
-#     lark_df[['room number', 'real price', 'Monthly Concession', 'Lease Status']], 
-#     on='room number', 
-#     how='left'
-# )
-
-# # 5. 在 Streamlit 展示结果
-# st.subheader("合并后的数据看板")
-# st.dataframe(merged_df)
-# st.title("Lark 多维表格数据自动抓取")
+merged_df = pd.merge(
+    leases_df, 
+    lark_df[['room number', 'real price', 'Monthly Concession', 'Lease Status']], 
+    on='room number', 
+    how='left'
+)
+st.subheader("合并后的数据看板")
+st.dataframe(merged_df)
+st.title("Lark 多维表格数据自动抓取")
 
 # if st.button('刷新数据'):
 #     df = fetch_bitable_data()
