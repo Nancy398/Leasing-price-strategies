@@ -287,55 +287,26 @@ with col3:
     st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed']:,.0f}")
 
 with col4:
-    # --- 逻辑层：先计算 ---
-    # 在这里放置滑轨，它会出现在 Metric 的下方
+    # A. 先获取滑轨的输入值
+    # 用户一旦滑动，下面的代码会立即重新计算
     target_profit_pct = st.slider(
-        "Set Margin (%)", 
-        min_value=0.0, 
-        max_value=20.0, 
-        value=5.0, 
-        step=1.0,
-        key="local_margin_slider"
+        "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
     )
-    target_margin = target_profit_pct / 100
     
-    # 重新计算目标价格
+    # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
+    target_margin = target_profit_pct / 100
     denominator = 1 - prop_data['Variable_Rate'] - target_margin
+    
     if denominator > 0 and prop_data['Vacant_Units'] > 0:
         total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
         req_rev = total_req_costs / denominator
         target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
     else:
-        target_price = 0
-
-    # --- 展现层：显示数字 ---
-    # 由于 Streamlit 的运行机制，我们可以把 metric 放在上面，slider 放在下面
-    # 如果想让滑轨紧贴数字，可以用 container 包裹
+        target_price = 0  # 或者显示 np.nan
+    
+    # C. 最后渲染数字卡片
+    # 这样它显示的就是刚刚算好的最新 target_price
     st.metric("目标租金 (Target)", f"${target_price:,.2f}")
-
-# --- 3. 出租率仪表盘 ---
-st.write("---")
-occ_rate = prop_data['Occupancy %'] * 100
-
-fig_gauge = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = occ_rate,
-    title = {'text': "出租率 (Occupancy Rate)"},
-    domain = {'x': [0, 1], 'y': [0, 1]},
-    gauge = {
-        'axis': {'range': [None, 100], 'tickwidth': 1},
-        'bar': {'color': "#1f77b4"},
-        'steps': [
-            {'range': [0, 70], 'color': "#ffcccb"},
-            {'range': [70, 90], 'color': "#ffffba"},
-            {'range': [90, 100], 'color': "#baffc9"}
-        ],
-        'threshold': {
-            'line': {'color': "red", 'width': 4},
-            'thickness': 0.75,
-            'value': 95}
-    }
-))
 
 fig_gauge.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
 st.plotly_chart(fig_gauge, use_container_width=True)
