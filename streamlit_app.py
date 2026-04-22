@@ -273,7 +273,7 @@ st.markdown(f"### 📍 地址: {prop_data['Address']}")
 st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
 
 # --- 2. 关键指标卡片 ---
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4,col5 = st.columns(5)
 
 with col1:
     st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
@@ -286,13 +286,14 @@ with col3:
     # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
     st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed']:,.0f}")
 
-with col4:
+with col5:
     # A. 先获取滑轨的输入值
     # 用户一旦滑动，下面的代码会立即重新计算
     target_profit_pct = st.slider(
         "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
     )
-    
+
+with col4:    
     # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
     target_margin = target_profit_pct / 100
     denominator = 1 - prop_data['Variable_Rate'] - target_margin
