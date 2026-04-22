@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go 
+import plotly.express as px
 
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
 APP_ID = st.secrets["Larksuite"]["APP_ID"]
