@@ -63,7 +63,7 @@ for col in cost_cols:
             cost_df[col].astype(str).str.replace(',', '').str.strip(), 
             errors='coerce'
         ).fillna(0)
-cost_df['Total_Fixed_Base_Cost'] = cost_df[cost_cols].sum(axis=1)
+cost_df['Total_Fixed'] = cost_df[cost_cols].sum(axis=1)
 cost_summary = cost_df[['Property ID', 'Total_Fixed']]
 
 signed_leases_df = merged_df[merged_df['Lease Status'] == 'Lease Signed'].copy()
@@ -74,7 +74,7 @@ leased_info = signed_leases_df.groupby('Property ID').agg(
 ).reset_index()
 
 # 3. 然后再与 property_df 合并
-final_df = property_df.merge(cost_df, on='Property ID', how='left') \
+final_df = property_df.merge(cost_summary, on='Property ID', how='left') \
                       .merge(leased_info, on='Property ID', how='left')
 
 final_df['Leased_Units'] = final_df['Leased_Units'].fillna(0)
