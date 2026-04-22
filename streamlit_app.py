@@ -45,7 +45,7 @@ st.dataframe(lark_df)
 
 merged_df = pd.merge(
     leases_df, 
-    lark_df[['room number', 'real price', 'Monthly Concession', 'Lease Status']], 
+    lark_df[['Room Number', 'Real Price', 'Monthly Concession', 'Lease Status']], 
     on='room number', 
     how='left'
 )
