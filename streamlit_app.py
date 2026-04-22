@@ -186,3 +186,65 @@ st.dataframe(
         )
     }
 )
+
+##----Sensitivity Analysis-----
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def generate_sensitivity_matrix(df, rent_range, vacancy_range):
+    total_units = df['Total Unit'].sum()
+    current_leased_count = df['Leased_Units'].sum()
+    active_leased_revenue = df['Already_Leased_Rev'].sum()
+    total_fixed_base_cost = df['Total_Fixed'].sum()
+    
+    # 预计算：纯固定成本 (剔除初始预算中的佣金，按照你的 DAX 逻辑)
+    other_fixed_cost = total_fixed_base_cost - (total_units * 50)
+    max_available_to_lease = total_units - current_leased_count
+
+    # 初始化矩阵结果
+    results = []
+
+    for sim_rent in rent_range:
+        row = []
+        for sim_vacant in vacancy_range:
+            # 模拟新租出数 (不能超过实际空置数)
+            new_leased_count = max(max_available_to_lease - sim_vacant, 0)
+            total_leased_count = current_leased_count + new_leased_count
+            
+            # 总收入 = 现有收入 + (新租出 * 模拟租金)
+            total_rev = active_leased_revenue + (new_leased_count * sim_rent)
+            
+            # 动态成本
+            # 管理费率 (假设逻辑：MH 为 12%，这里取加权平均或简化)
+            mgmt_rate = 0.12 if (df['Type'] == 'MH').any() else 0.0
+            mgmt_fee = total_rev * mgmt_rate
+            comm_fee = total_leased_count * 50
+            
+            # NOI 计算
+            noi = total_rev - mgmt_fee - comm_fee - other_fixed_cost
+            row.append(noi)
+        results.append(row)
+    
+    return pd.DataFrame(results, index=rent_range, columns=vacancy_range)
+
+st.header("NOI 敏感性分析矩阵")
+
+# UI 设置分析范围
+col1, col2 = st.columns(2)
+with col1:
+    rent_step = st.select_slider("租金步长", options=[50, 100], value=50)
+    rent_levels = np.arange(800, 2000, rent_step)
+with col2:
+    vac_levels = np.arange(0, int(final_df['Vacant_Units'].max()) + 5, 1)
+
+# 生成矩阵数据
+sensitivity_df = generate_sensitivity_matrix(final_df, rent_levels, vac_levels)
+
+# 绘制热力图 (Heatmap)
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.heatmap(sensitivity_df, annot=True, fmt=".0f", cmap="RdYlGn", ax=ax)
+ax.set_title("模拟 NOI (租金 vs 空置数)")
+ax.set_xlabel("模拟空置数 (Vacancy Units)")
+ax.set_ylabel("模拟租金水平 (Simulated Rent)")
+
+st.pyplot(fig)
