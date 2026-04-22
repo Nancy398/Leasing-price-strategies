@@ -132,7 +132,7 @@ def calculate_target_price(df, profit_margin):
     # TotalCommission = Total Unit * 50
     df['Total_Commission'] = df['Total Unit'] * 50
     # TotalRequiredCosts = TotalFixed + TotalCommission
-    df['Total_Required_Costs'] = df['Total_Fixed_Base_Cost'] + df['Total_Commission']
+    df['Total_Required_Costs'] = df['Total_Fixed'] + df['Total_Commission']
     
     # --- 3. 核心定价逻辑 ---
     # Required_Total_Rev = TotalRequiredCosts / Denominator
