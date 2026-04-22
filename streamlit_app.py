@@ -112,5 +112,72 @@ final_df['Occupancy %'] = (
 
 # 如果计算出负数（说明现有租金已覆盖成本），通常置为 0
 # final_df['Breakeven_Rent'] = final_df['Breakeven_Rent'].clip(lower=0)
-st.subheader("合并后的数据看板")
-st.dataframe(final_df)
+
+##Target Price
+target_profit_margin = st.sidebar.slider(
+    "Target Profit Margin (%)", 
+    min_value=0.0, 
+    max_value=20.0, 
+    value=5.0, 
+    step=1.0
+) / 100
+
+
+def calculate_target_price(df, profit_margin):
+    # VariableRate: IF(Type == "MH", 0.12, 0)
+    df['Variable_Rate'] = df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
+    df['Denominator'] = 1 - df['Variable_Rate'] - profit_margin
+    
+    # --- 2. 成本汇总 ---
+    # TotalCommission = Total Unit * 50
+    df['Total_Commission'] = df['Total Unit'] * 50
+    # TotalRequiredCosts = TotalFixed + TotalCommission
+    df['Total_Required_Costs'] = df['Total_Fixed_Base_Cost'] + df['Total_Commission']
+    
+    # --- 3. 核心定价逻辑 ---
+    # Required_Total_Rev = TotalRequiredCosts / Denominator
+    # 处理 Denominator <= 0 的极端情况
+    df['Required_Total_Rev'] = np.where(
+        df['Denominator'] <= 0,
+        np.nan, 
+        df['Total_Required_Costs'] / df['Denominator']
+    )
+    
+    # Gap_To_Fill = Required_Total_Rev - Already_Leased_Rev
+    df['Gap_To_Fill'] = df['Required_Total_Rev'] - df['Already_Leased_Rev']
+    
+    # --- 4. 最终输出 ---
+    # 逻辑判断：如果分母异常、如果没有空置房、或者计算结果
+    conditions = [
+        (df['Denominator'] <= 0),
+        (df['Vacant_Units'] <= 0)
+    ]
+    choices = [
+        np.nan, # 表示 Error: High Margin
+        0       # 表示 Full / No Vacancy (或者你可以设为 0)
+    ]
+    
+    df['Target_Remaining_Price'] = np.select(
+        conditions, 
+        choices, 
+        default=df['Gap_To_Fill'] / df['Vacant_Units']
+    )
+    return df
+
+# 执行计算
+final_df = calculate_target_price(final_df, target_profit_margin)
+st.subheader(f"目标利润率设为 {target_profit_margin:.0%} 时的定价建议")
+
+# 格式化展示
+st.dataframe(
+    final_df[['Property ID', 'Type', 'Vacant_Units', 'Breakeven_Rent', 'Target_Remaining_Price']],
+    column_config={
+        "Target_Remaining_Price": st.column_config.NumberColumn(
+            "Target Price",
+            format="$%.2f",
+            help="为达到目标利润率，剩余空置房需收取的平均租金"
+        )
+    }
+)
+# st.subheader("合并后的数据看板")
+# st.dataframe(final_df)
