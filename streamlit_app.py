@@ -287,18 +287,19 @@ with col3:
     st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed']:,.0f}")
 
 with col4:
-    # --- 关键修改点：先在这一列里放滑轨 ---
-    # 这样滑轨就会紧贴在 Target Price 的数字下面
+    # --- 逻辑层：先计算 ---
+    # 在这里放置滑轨，它会出现在 Metric 的下方
     target_profit_pct = st.slider(
         "Set Margin (%)", 
-        0.0, 20.0, 5.0, 1.0,
-        key="local_margin_slider" # 给个唯一 key
+        min_value=0.0, 
+        max_value=20.0, 
+        value=5.0, 
+        step=1.0,
+        key="local_margin_slider"
     )
     target_margin = target_profit_pct / 100
     
-    # --- 然后重新计算 Target Price ---
-    # 复用你之前的逻辑，或者直接调用函数
-    # 这里的计算会随着上方滑轨的拖动而实时改变数值
+    # 重新计算目标价格
     denominator = 1 - prop_data['Variable_Rate'] - target_margin
     if denominator > 0 and prop_data['Vacant_Units'] > 0:
         total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
@@ -306,6 +307,10 @@ with col4:
         target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
     else:
         target_price = 0
+
+    # --- 展现层：显示数字 ---
+    # 由于 Streamlit 的运行机制，我们可以把 metric 放在上面，slider 放在下面
+    # 如果想让滑轨紧贴数字，可以用 container 包裹
     st.metric("目标租金 (Target)", f"${target_price:,.2f}")
 
 # --- 3. 出租率仪表盘 ---
