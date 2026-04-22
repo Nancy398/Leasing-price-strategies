@@ -256,3 +256,85 @@ st.dataframe(
     column_config=cols_config,
     use_container_width=True
 )
+
+##----SHOW-----
+st.title("PROPERTY LEASING STRATEGY")
+
+# 假设 final_df 是你之前合并好并完成计算的 DataFrame
+prop_id = st.selectbox("选择物业 ID (Property ID)", options=final_df['Property ID'].unique())
+
+# 获取选中物业的数据行
+prop_data = final_df[final_df['Property ID'] == prop_id].iloc[0]
+
+# 展示地址
+st.markdown(f"### 📍 地址: {prop_data['Address']}")
+st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
+
+# --- 2. 关键指标卡片 ---
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+
+with col2:
+    st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:.2f}")
+
+with col3:
+    # 这里的 Est_NOI 可以是当前状态下的 NOI
+    # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
+    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed_Base_Cost']:.0f}")
+
+with col4:
+    st.metric("目标租金 (Target)", f"${prop_data['Target_Remaining_Price']:.2f}", 
+              help=f"基于 {target_profit_margin*100:.0f}% 目标利润率计算")
+
+# --- 3. 出租率仪表盘 ---
+st.write("---")
+occ_rate = prop_data['Occupancy %'] * 100
+
+fig_gauge = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = occ_rate,
+    title = {'text': "出租率 (Occupancy Rate)"},
+    domain = {'x': [0, 1], 'y': [0, 1]},
+    gauge = {
+        'axis': {'range': [None, 100], 'tickwidth': 1},
+        'bar': {'color': "#1f77b4"},
+        'steps': [
+            {'range': [0, 70], 'color': "#ffcccb"},
+            {'range': [70, 90], 'color': "#ffffba"},
+            {'range': [90, 100], 'color': "#baffc9"}
+        ],
+        'threshold': {
+            'line': {'color': "red", 'width': 4},
+            'thickness': 0.75,
+            'value': 95}
+    }
+))
+
+fig_gauge.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
+st.plotly_chart(fig_gauge, use_container_width=True)
+
+# --- 4. 敏感性分析矩阵 ---
+st.write("---")
+st.subheader("NOI 敏感性分析 (单一物业)")
+
+# 局部滑轨控制矩阵范围
+c1, c2 = st.columns(2)
+with c1:
+    r_range = st.slider("模拟租金范围", 800, 2000, (800, 2000), step=50, key="prop_rent")
+with c2:
+    v_range = st.slider("模拟空置数范围", 0, int(prop_data['Total Unit']), (0, 5), key="prop_vac")
+
+# 生成矩阵 (传入只含该物业的 DataFrame)
+single_prop_df = final_df[final_df['Property ID'] == prop_id]
+rent_levels = np.arange(r_range[0], r_range[1] + 50, 100)
+vac_levels = list(range(v_range[0], v_range[1] + 1))
+
+noi_matrix = generate_dynamic_noi_matrix(single_prop_df, rent_levels, vac_levels)
+
+# 展示矩阵
+st.dataframe(
+    noi_matrix.style.background_gradient(cmap='RdYlGn', axis=None).format("${:.0f}"),
+    use_container_width=True
+)
