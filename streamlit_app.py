@@ -94,6 +94,21 @@ final_df['Breakeven_Rent'] = np.where(
     0,
     final_df['Gap_To_Fill'] / final_df['Vacant_Units']
 )
+# Current Average Leased
+final_df['Current_Avg_Leased'] = (
+    final_df['Already_Leased_Rev'] / final_df['Leased_Units']
+).fillna(0)
+
+# 如果出现 Leased_Units 为 0 导致结果为无穷大 (inf)，可以进行修正
+final_df['Current_Avg_Leased'] = final_df['Current_Avg_Leased'].replace([np.inf, -np.inf], 0)
+
+#Occupancy
+final_df['Occupancy %'] = (
+    final_df['Leased_Units'] / final_df['Total Unit']
+).fillna(0)
+
+# 转换成百分比格式显示预览
+# final_df['Occupancy %'] = final_df['Occupancy %'].clip(0, 1) # 确保不会超过 100%
 
 # 如果计算出负数（说明现有租金已覆盖成本），通常置为 0
 # final_df['Breakeven_Rent'] = final_df['Breakeven_Rent'].clip(lower=0)
