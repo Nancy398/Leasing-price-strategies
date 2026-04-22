@@ -166,11 +166,18 @@ def calculate_target_price(df, profit_margin):
 
 # 执行计算
 final_df = calculate_target_price(final_df, target_profit_margin)
-st.subheader(f"目标利润率设为 {target_profit_margin:.0%} 时的定价建议")
+
+final_df['Current_Avg_Leased'] = (
+    final_df['Already_Leased_Rev'] / final_df['Leased_Units']
+).fillna(0)
+
+# 如果出现 Leased_Units 为 0 导致结果为无穷大 (inf)，可以进行修正
+final_df['Current_Avg_Leased'] = final_df['Current_Avg_Leased'].replace([np.inf, -np.inf], 0)
+final_df['Est_NOI'] = final_df['Already_Leased_Rev']-final_df['Total_Fixed']-final_df['Leased_Units']*50 - final_df['Already_Leased_Rev']*0.12
 
 # 格式化展示
 st.dataframe(
-    final_df[['Property ID', 'Type', 'Vacant_Units', 'Breakeven_Rent', 'Target_Remaining_Price']],
+    final_df[['Property ID', 'Type', 'Vacant_Units', 'Breakeven_Rent', 'Target_Remaining_Price','Current_Avg_Leased','Est_NOI']],
     column_config={
         "Target_Remaining_Price": st.column_config.NumberColumn(
             "Target Price",
@@ -179,5 +186,3 @@ st.dataframe(
         )
     }
 )
-# st.subheader("合并后的数据看板")
-# st.dataframe(final_df)
