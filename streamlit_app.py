@@ -3,8 +3,8 @@ import requests
 import pandas as pd
 
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
-APP_ID = "cli_a96c1d8026b81e17"
-APP_SECRET = "gXJSZv2PWBAO86C089TJEh5y2kU4yx3Y"
+APP_ID = st.secrets["Larksuite"]["APP_ID"]
+APP_SECRET = st.secrets["Larksuite"]["APP_SECRET"]
 APP_TOKEN = "Bu3QbY095aE5H1sdXtvjoRG4pjb"
 TABLE_ID = "tbldXd7TSURHd0sI"
 
