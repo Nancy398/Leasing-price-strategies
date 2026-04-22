@@ -282,7 +282,7 @@ with col2:
 with col3:
     # 这里的 Est_NOI 可以是当前状态下的 NOI
     # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
-    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed_Base_Cost']:.0f}")
+    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed']:.0f}")
 
 with col4:
     st.metric("目标租金 (Target)", f"${prop_data['Target_Remaining_Price']:.2f}", 
