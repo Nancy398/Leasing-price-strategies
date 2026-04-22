@@ -46,7 +46,7 @@ st.dataframe(lark_df)
 merged_df = pd.merge(
     leases_df, 
     lark_df[['Room Number', 'Real Price', 'Monthly Concession', 'Lease Status']], 
-    on='room number', 
+    on='Room Number', 
     how='left'
 )
 st.subheader("合并后的数据看板")
