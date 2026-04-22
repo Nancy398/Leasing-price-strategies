@@ -35,26 +35,28 @@ def fetch_bitable_data():
         st.error(f"抓取失败: {data.get('msg')}")
         return pd.DataFrame()
 
-leases_df = pd.read_csv("Leases.csv")
-# if st.button('刷新数据'):
-#     df = fetch_bitable_data()
-#     st.session_state['data'] = df
+# leases_df = pd.read_csv("Leases.csv")
 
-lark_df = fetch_bitable_data() 
 
-leases_df['room number'] = leases_df['room number'].astype(str).str.strip()
-lark_df['room number'] = lark_df['room number'].astype(str).str.strip()
-st.dataframe(leases_df)
-st.dataframe(lark_df)
+# lark_df = fetch_bitable_data() 
 
-merged_df = pd.merge(
-    leases_df, 
-    lark_df[['room number', 'real price', 'Monthly Concession', 'Lease Status']], 
-    on='room number', 
-    how='left'
-)
+# leases_df['room number'] = leases_df['room number'].astype(str).str.strip()
+# lark_df['room number'] = lark_df['room number'].astype(str).str.strip()
+# st.dataframe(leases_df)
+# st.dataframe(lark_df)
 
-# 5. 在 Streamlit 展示结果
-st.subheader("合并后的数据看板")
-st.dataframe(merged_df)
+if st.button('刷新数据'):
+    df = fetch_bitable_data()
+    st.session_state['data'] = df
+
+# merged_df = pd.merge(
+#     leases_df, 
+#     lark_df[['room number', 'real price', 'Monthly Concession', 'Lease Status']], 
+#     on='room number', 
+#     how='left'
+# )
+
+# # 5. 在 Streamlit 展示结果
+# st.subheader("合并后的数据看板")
+# st.dataframe(merged_df)
 
