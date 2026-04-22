@@ -35,7 +35,7 @@ def fetch_bitable_data():
         st.error(f"抓取失败: {data.get('msg')}")
         return pd.DataFrame()
 
-leases_df = pd.read_csv("Leases.csv", dtype={"room number": str})
+leases_df = pd.read_csv("Leases.csv")
 # if st.button('刷新数据'):
 #     df = fetch_bitable_data()
 #     st.session_state['data'] = df
