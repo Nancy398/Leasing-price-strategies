@@ -40,8 +40,6 @@ lark_df = fetch_bitable_data()
 
 leases_df['Room Number'] = leases_df['Room Number'].astype(str).str.strip()
 lark_df['Room Number'] = lark_df['Room Number'].astype(str).str.strip()
-st.dataframe(leases_df)
-st.dataframe(lark_df)
 
 merged_df = pd.merge(
     leases_df, 
@@ -49,6 +47,10 @@ merged_df = pd.merge(
     on='Room Number', 
     how='left'
 )
+
+merged_df['Real Price'] = pd.to_numeric(merged_df['Real Price'], errors='coerce').fillna(0)
+merged_df['Monthly Concession'] = pd.to_numeric(merged_df['Monthly Concession'], errors='coerce').fillna(0)
+merged_df['Net Rent'] = merged_df['Real Price'] - merged_df['Monthly Concession']
 st.subheader("合并后的数据看板")
 st.dataframe(merged_df)
 st.title("Lark 多维表格数据自动抓取")
