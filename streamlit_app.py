@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+import numpy as np
 
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
 APP_ID = st.secrets["Larksuite"]["APP_ID"]
@@ -51,14 +52,43 @@ merged_df = pd.merge(
 merged_df['Real Price'] = pd.to_numeric(merged_df['Real Price'], errors='coerce').fillna(0)
 merged_df['Monthly Concession'] = pd.to_numeric(merged_df['Monthly Concession'], errors='coerce').fillna(0)
 merged_df['Net Rent'] = merged_df['Real Price'] - merged_df['Monthly Concession']
+cost_df = pd.read_csv("Cost.csv")
+property_df = pd.read_csv("Property.csv")
+
+signed_leases_df = merged_df[merged_df['Lease Status'] == 'Lease Signed'].copy()
+
+leased_info = signed_leases_df.groupby('Property ID').agg(
+    Leased_Units=('Room Number', 'count'),          # 这里统计的就是已签约的房间数了
+    Already_Leased_Rev=('Net Rent', 'sum') # 这里统计的就是已签约的总净租金
+).reset_index()
+
+# 3. 然后再与 property_df 合并
+final_df = property_df.merge(cost_df, on='Property ID', how='left') \
+                      .merge(leased_info, on='Property ID', how='left')
+
+final_df['Leased_Units'] = final_df['Leased_Units'].fillna(0)
+final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
+
+final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
+final_df['Variable_Rate'] = final_df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
+final_df['Denominator'] = 1 - final_df['Variable_Rate']
+final_df['Total_Fixed'] = final_df['Mortgage Loan Interest'] + \
+                          final_df['Insurance'] + \
+                          final_df['Tax'] + \
+                          final_df['Other Fixed']
+
+final_df['Total_Commission'] = final_df['Total Unit'] * 50
+final_df['Total_Required_Costs'] = final_df['Total_Fixed'] + final_df['Total_Commission']
+
+final_df['Required_Total_Rev'] = final_df['Total_Required_Costs'] / final_df['Denominator']
+final_df['Gap_To_Fill'] = final_df['Required_Total_Rev'] - final_df['Already_Leased_Rev']
+final_df['Breakeven_Rent'] = np.where(
+    final_df['Vacant_Units'] <= 0,
+    0,
+    final_df['Gap_To_Fill'] / final_df['Vacant_Units']
+)
+
+# 如果计算出负数（说明现有租金已覆盖成本），通常置为 0
+# final_df['Breakeven_Rent'] = final_df['Breakeven_Rent'].clip(lower=0)
 st.subheader("合并后的数据看板")
-st.dataframe(merged_df)
-st.title("Lark 多维表格数据自动抓取")
-
-# if st.button('刷新数据'):
-#     df = fetch_bitable_data()
-#     st.session_state['data'] = df
-
-# if 'data' in st.session_state:
-#     st.write("最新数据：")
-#     st.dataframe(st.session_state['data'])
+st.dataframe(final_df)
