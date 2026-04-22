@@ -167,7 +167,7 @@ def calculate_target_price(df, profit_margin):
     return df
 
 # 执行计算
-final_df = calculate_target_price(final_df, target_profit_margin)
+# final_df = calculate_target_price(final_df, target_profit_margin)
 
 final_df['Current_Avg_Leased'] = (
     final_df['Already_Leased_Rev'] / final_df['Leased_Units']
