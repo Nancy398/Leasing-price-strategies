@@ -177,17 +177,17 @@ final_df['Current_Avg_Leased'] = (
 final_df['Current_Avg_Leased'] = final_df['Current_Avg_Leased'].replace([np.inf, -np.inf], 0)
 final_df['Est_NOI'] = final_df['Already_Leased_Rev']-final_df['Total_Fixed']-final_df['Leased_Units']*50 - final_df['Already_Leased_Rev']*0.12
 
-# 格式化展示
-st.dataframe(
-    final_df[['Property ID', 'Type', 'Vacant_Units', 'Breakeven_Rent', 'Target_Remaining_Price','Current_Avg_Leased','Est_NOI']],
-    column_config={
-        "Target_Remaining_Price": st.column_config.NumberColumn(
-            "Target Price",
-            format="$%.2f",
-            help="为达到目标利润率，剩余空置房需收取的平均租金"
-        )
-    }
-)
+# # 格式化展示
+# st.dataframe(
+#     final_df[['Property ID', 'Type', 'Vacant_Units', 'Breakeven_Rent','Current_Avg_Leased','Est_NOI']],
+#     column_config={
+#         "Target_Remaining_Price": st.column_config.NumberColumn(
+#             "Target Price",
+#             format="$%.2f",
+#             help="为达到目标利润率，剩余空置房需收取的平均租金"
+#         )
+#     }
+# )
 
 ##----Sensitivity Analysis-----
 st.header("NOI 敏感性模拟器")
