@@ -308,8 +308,6 @@ with col4:
     # 这样它显示的就是刚刚算好的最新 target_price
     st.metric("目标租金 (Target)", f"${target_price:,.2f}")
 
-fig_gauge.update_layout(height=300, margin=dict(l=20, r=20, t=50, b=20))
-st.plotly_chart(fig_gauge, use_container_width=True)
 
 # --- 4. 敏感性分析矩阵 ---
 st.write("---")
