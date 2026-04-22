@@ -35,15 +35,13 @@ def fetch_bitable_data():
         st.error(f"抓取失败: {data.get('msg')}")
         return pd.DataFrame()
 
-# leases_df = pd.read_csv("Leases.csv")
+leases_df = pd.read_csv("Leases.csv")
+lark_df = fetch_bitable_data() 
 
-
-# lark_df = fetch_bitable_data() 
-
-# leases_df['room number'] = leases_df['room number'].astype(str).str.strip()
-# lark_df['room number'] = lark_df['room number'].astype(str).str.strip()
-# st.dataframe(leases_df)
-# st.dataframe(lark_df)
+leases_df['Room Number'] = leases_df['Room Number'].astype(str).str.strip()
+lark_df['Room Number'] = lark_df['Room Number'].astype(str).str.strip()
+st.dataframe(leases_df)
+st.dataframe(lark_df)
 
 
 # merged_df = pd.merge(
@@ -56,12 +54,12 @@ def fetch_bitable_data():
 # # 5. 在 Streamlit 展示结果
 # st.subheader("合并后的数据看板")
 # st.dataframe(merged_df)
-st.title("Lark 多维表格数据自动抓取")
+# st.title("Lark 多维表格数据自动抓取")
 
-if st.button('刷新数据'):
-    df = fetch_bitable_data()
-    st.session_state['data'] = df
+# if st.button('刷新数据'):
+#     df = fetch_bitable_data()
+#     st.session_state['data'] = df
 
-if 'data' in st.session_state:
-    st.write("最新数据：")
-    st.dataframe(st.session_state['data'])
+# if 'data' in st.session_state:
+#     st.write("最新数据：")
+#     st.dataframe(st.session_state['data'])
