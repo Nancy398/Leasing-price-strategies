@@ -188,63 +188,71 @@ st.dataframe(
 )
 
 ##----Sensitivity Analysis-----
-import seaborn as sns
-import matplotlib.pyplot as plt
+st.header("NOI 敏感性模拟器")
 
-def generate_sensitivity_matrix(df, rent_range, vacancy_range):
+# --- 装置 1: 选择租金范围 ---
+# 使用 select_slider 或 slider 的范围模式 (value 传入元组)
+rent_min, rent_max = st.slider(
+    "选择模拟租金范围 ($)",
+    min_value=800,
+    max_value=2000,
+    value=(800, 1500), # 默认范围
+    step=50
+)
+
+# --- 装置 2: 选择空置数范围 ---
+vac_min, vac_max = st.slider(
+    "选择模拟空置房数范围",
+    min_value=0,
+    max_value=30, # 建议设为总房间数的最大值
+    value=(0, 10), # 默认显示 0 到 10 个空置
+    step=1
+)
+
+# 生成动态的范围数组
+rent_levels = np.arange(rent_min, rent_max + 50, 100) # 每 100 一个档位
+vac_levels = list(range(vac_min, vac_max + 1))
+
+def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     total_units = df['Total Unit'].sum()
     current_leased_count = df['Leased_Units'].sum()
-    active_leased_revenue = df['Already_Leased_Rev'].sum()
+    active_leased_rev = df['Already_Leased_Rev'].sum()
     total_fixed_base_cost = df['Total_Fixed'].sum()
     
-    # 预计算：纯固定成本 (剔除初始预算中的佣金，按照你的 DAX 逻辑)
     other_fixed_cost = total_fixed_base_cost - (total_units * 50)
-    max_available_to_lease = total_units - current_leased_count
+    max_available = total_units - current_leased_count
 
-    # 初始化矩阵结果
-    results = []
-
-    for sim_rent in rent_range:
-        row = []
-        for sim_vacant in vacancy_range:
-            # 模拟新租出数 (不能超过实际空置数)
-            new_leased_count = max(max_available_to_lease - sim_vacant, 0)
-            total_leased_count = current_leased_count + new_leased_count
+    matrix_data = []
+    for rent in rent_levels:
+        row = {"租金水平": f"${rent}"}
+        for vac in vac_levels:
+            # 模拟逻辑
+            new_leased = max(max_available - vac, 0)
+            total_leased = current_leased_count + new_leased
+            total_rev = active_leased_rev + (new_leased * rent)
             
-            # 总收入 = 现有收入 + (新租出 * 模拟租金)
-            total_rev = active_leased_revenue + (new_leased_count * sim_rent)
-            
-            # 动态成本
-            # 管理费率 (假设逻辑：MH 为 12%，这里取加权平均或简化)
+            # 成本逻辑
             mgmt_rate = 0.12 if (df['Type'] == 'MH').any() else 0.0
-            mgmt_fee = total_rev * mgmt_rate
-            comm_fee = total_leased_count * 50
+            noi = (total_rev * (1 - mgmt_rate)) - (total_leased * 50) - other_fixed_cost
             
-            # NOI 计算
-            noi = total_rev - mgmt_fee - comm_fee - other_fixed_cost
-            row.append(noi)
-        results.append(row)
+            row[f"空置 {vac}"] = noi
+        matrix_data.append(row)
     
-    return pd.DataFrame(results, index=rent_range, columns=vacancy_range)
+    return pd.DataFrame(matrix_data).set_index("租金水平")
 
-st.header("NOI 敏感性分析矩阵")
+# 计算矩阵
+noi_matrix = generate_dynamic_noi_matrix(final_df, rent_levels, vac_levels)
 
-# UI 设置分析范围
-col1, col2 = st.columns(2)
-with col1:
-    rent_step = st.select_slider("租金步长", options=[50, 100], value=50)
-    rent_levels = np.arange(800, 2000, rent_step)
-with col2:
-    vac_levels = np.arange(0, int(final_df['Vacant_Units'].max()) + 5, 1)
+st.subheader(f"NOI 模拟矩阵 (租金 {rent_min}-{rent_max} | 空置 {vac_min}-{vac_max})")
 
-# 生成矩阵数据
-sensitivity_df = generate_sensitivity_matrix(final_df, rent_levels, vac_levels)
+# 自动为所有动态生成的列配置货币格式
+cols_config = {
+    col: st.column_config.NumberColumn(format="$%.0f") 
+    for col in noi_matrix.columns
+}
 
-# 绘制热力图 (Heatmap)
-fig, ax = plt.subplots(figsize=(10, 6))
-sns.heatmap(sensitivity_df, annot=True, fmt=".0f", cmap="RdYlGn", ax=ax)
-ax.set_title("模拟 NOI (租金 vs 空置数)")
-ax.set_xlabel("模拟空置数 (Vacancy Units)")
-ax.set_ylabel("模拟租金水平 (Simulated Rent)")
-
-st.pyplot(fig)
+st.dataframe(
+    noi_matrix,
+    column_config=cols_config,
+    use_container_width=True
+)
