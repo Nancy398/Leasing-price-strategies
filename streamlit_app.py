@@ -35,13 +35,24 @@ def fetch_bitable_data():
         st.error(f"抓取失败: {data.get('msg')}")
         return pd.DataFrame()
 
-# 4. Streamlit 展示
-st.title("Lark 多维表格数据自动抓取")
+leases_df = pd.read_csv("Leases.csv", dtype={"room number": str})
+# if st.button('刷新数据'):
+#     df = fetch_bitable_data()
+#     st.session_state['data'] = df
 
-if st.button('刷新数据'):
-    df = fetch_bitable_data()
-    st.session_state['data'] = df
+lark_df = fetch_bitable_data() 
 
-if 'data' in st.session_state:
-    st.write("最新数据：")
-    st.dataframe(st.session_state['data'])
+leases_df['room number'] = leases_df['room number'].astype(str).str.strip()
+lark_df['room number'] = lark_df['room number'].astype(str).str.strip()
+
+merged_df = pd.merge(
+    leases_df, 
+    lark_df[['room number', 'real price', 'Monthly Concession', 'Lease Status']], 
+    on='room number', 
+    how='left'
+)
+
+# 5. 在 Streamlit 展示结果
+st.subheader("合并后的数据看板")
+st.dataframe(merged_df)
+
