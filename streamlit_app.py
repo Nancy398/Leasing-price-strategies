@@ -54,6 +54,17 @@ merged_df['Monthly Concession'] = pd.to_numeric(merged_df['Monthly Concession'],
 merged_df['Net Rent'] = merged_df['Real Price'] - merged_df['Monthly Concession']
 cost_df = pd.read_csv("Cost.csv")
 property_df = pd.read_csv("Property.csv")
+cost_df.columns = cost_df.columns.str.strip()
+cost_cols = ['Mortgage Loan Interest', 'Insurance', 'Tax', 'Other Fixed']
+for col in cost_cols:
+    if col in cost_df.columns:
+        # 先转成字符串，去掉逗号，再转成数字
+        cost_df[col] = pd.to_numeric(
+            cost_df[col].astype(str).str.replace(',', '').str.strip(), 
+            errors='coerce'
+        ).fillna(0)
+cost_df['Total_Fixed_Base_Cost'] = cost_df[cost_cols].sum(axis=1)
+cost_summary = cost_df[['Property ID', 'Total_Fixed']]
 
 signed_leases_df = merged_df[merged_df['Lease Status'] == 'Lease Signed'].copy()
 
@@ -72,10 +83,6 @@ final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
 final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
 final_df['Variable_Rate'] = final_df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
 final_df['Denominator'] = 1 - final_df['Variable_Rate']
-final_df['Total_Fixed'] = final_df['Mortgage Loan Interest'] + \
-                          final_df['Insurance'] + \
-                          final_df['Tax'] + \
-                          final_df['Other Fixed']
 
 final_df['Total_Commission'] = final_df['Total Unit'] * 50
 final_df['Total_Required_Costs'] = final_df['Total_Fixed'] + final_df['Total_Commission']
