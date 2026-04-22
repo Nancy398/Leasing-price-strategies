@@ -44,6 +44,8 @@ lark_df = fetch_bitable_data()
 
 leases_df['room number'] = leases_df['room number'].astype(str).str.strip()
 lark_df['room number'] = lark_df['room number'].astype(str).str.strip()
+st.dataframe(leases_df)
+st.dataframe(lark_df)
 
 merged_df = pd.merge(
     leases_df, 
