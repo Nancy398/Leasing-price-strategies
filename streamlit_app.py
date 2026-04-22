@@ -115,14 +115,14 @@ final_df['Occupancy %'] = (
 # 如果计算出负数（说明现有租金已覆盖成本），通常置为 0
 # final_df['Breakeven_Rent'] = final_df['Breakeven_Rent'].clip(lower=0)
 
-##Target Price
-target_profit_margin = st.sidebar.slider(
-    "Target Profit Margin (%)", 
-    min_value=0.0, 
-    max_value=20.0, 
-    value=5.0, 
-    step=1.0
-) / 100
+# ##Target Price
+# target_profit_margin = st.sidebar.slider(
+#     "Target Profit Margin (%)", 
+#     min_value=0.0, 
+#     max_value=20.0, 
+#     value=5.0, 
+#     step=1.0
+# ) / 100
 
 
 def calculate_target_price(df, profit_margin):
@@ -284,11 +284,29 @@ with col2:
 with col3:
     # 这里的 Est_NOI 可以是当前状态下的 NOI
     # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
-    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed']:.0f}")
+    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed']:,.0f}")
 
 with col4:
-    st.metric("目标租金 (Target)", f"${prop_data['Target_Remaining_Price']:.2f}", 
-              help=f"基于 {target_profit_margin*100:.0f}% 目标利润率计算")
+    # --- 关键修改点：先在这一列里放滑轨 ---
+    # 这样滑轨就会紧贴在 Target Price 的数字下面
+    target_profit_pct = st.slider(
+        "Set Margin (%)", 
+        0.0, 20.0, 5.0, 1.0,
+        key="local_margin_slider" # 给个唯一 key
+    )
+    target_margin = target_profit_pct / 100
+    
+    # --- 然后重新计算 Target Price ---
+    # 复用你之前的逻辑，或者直接调用函数
+    # 这里的计算会随着上方滑轨的拖动而实时改变数值
+    denominator = 1 - prop_data['Variable_Rate'] - target_margin
+    if denominator > 0 and prop_data['Vacant_Units'] > 0:
+        total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
+        req_rev = total_req_costs / denominator
+        target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
+    else:
+        target_price = 0
+    st.metric("目标租金 (Target)", f"${target_price:,.2f}")
 
 # --- 3. 出租率仪表盘 ---
 st.write("---")
@@ -337,6 +355,6 @@ noi_matrix = generate_dynamic_noi_matrix(single_prop_df, rent_levels, vac_levels
 
 # 展示矩阵
 st.dataframe(
-    noi_matrix.style.background_gradient(cmap='RdYlGn', axis=None).format("${:.0f}"),
+    noi_matrix.style.background_gradient(cmap='RdYlGn', axis=None).format("${:,.0f}"),
     use_container_width=True
 )
