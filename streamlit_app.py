@@ -214,10 +214,10 @@ rent_levels = np.arange(rent_min, rent_max + 50, 100) # 每 100 一个档位
 vac_levels = list(range(vac_min, vac_max + 1))
 
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
-    total_units = df['Total Unit'].sum()
-    current_leased_count = df['Leased_Units'].sum()
-    active_leased_rev = df['Already_Leased_Rev'].sum()
-    total_fixed_base_cost = df['Total_Fixed'].sum()
+    total_units = df['Total Unit']
+    current_leased_count = df['Leased_Units']
+    active_leased_rev = df['Already_Leased_Rev']
+    total_fixed_base_cost = df['Total_Fixed']
     
     other_fixed_cost = total_fixed_base_cost - (total_units * 50)
     max_available = total_units - current_leased_count
