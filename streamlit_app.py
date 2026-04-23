@@ -265,7 +265,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
             row[f"Vacant: {vac}"] = noi
         matrix_data.append(row) 
     return pd.DataFrame(matrix_data).set_index("Rent")
-
+st.dataframe(final_df)
 ##----SHOW-----
 st.title("PROPERTY LEASING STRATEGY")
 
