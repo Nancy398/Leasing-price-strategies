@@ -24,7 +24,7 @@ st.markdown(f"""
 
 /* ✅ 未滑动部分（灰色） */
 .stSlider [data-baseweb="slider"] div[data-testid="stTickBarMax"] {{
-    background-color: #ddd !important;
+    background-color: #a3c1da !important;
 }}
 
 /* ✅ 圆点（handle） */
