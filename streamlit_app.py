@@ -6,33 +6,49 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 # --- 样式注入：将 Slider 和其标题改为蓝色调 ---
-st.markdown("""
+DEEP_BLUE = "#003366" 
+
+st.markdown(f"""
     <style>
-    /* 1. 强制修改 Metric 数字的颜色（默认是红色/绿色/黑色） */
-    [data-testid="stMetricValue"] {
-        color: #1f77b4 !important;
-    }
+    /* 1. 标题颜色 - 所有的 h1, h2, h3 */
+    h1, h2, h3 {{
+        color: {DEEP_BLUE} !important;
+    }}
+
+    /* 2. Metric 数字颜色 */
+    [data-testid="stMetricValue"] {{
+        color: {DEEP_BLUE} !important;
+    }}
     
-    /* 2. 强制修改 Slider 标题颜色 */
-    .stSlider label {
-        color: #1f77b4 !important;
-    }
+    /* 3. Metric 标签颜色 */
+    [data-testid="stMetricLabel"] p {{
+        color: {DEEP_BLUE} !important;
+        font-weight: bold;
+    }}
 
-    /* 3. 强制修改 Slider 轨道（针对新版 Streamlit 结构） */
-    .stSlider [data-baseweb="slider"] > div > div {
-        background: #1f77b4 !important;
-    }
+    /* 4. Slider 样式：轨道、圆钮和标题 */
+    /* 标题 */
+    .stSlider label {{
+        color: {DEEP_BLUE} !important;
+    }}
+    /* 已滑动轨道颜色 */
+    .stSlider [data-baseweb="slider"] div[style*="background-color"] {{
+        background-color: {DEEP_BLUE} !important;
+    }}
+    /* 圆钮颜色 */
+    .stSlider [role="slider"] {{
+        background-color: {DEEP_BLUE} !important;
+        border-color: {DEEP_BLUE} !important;
+    }}
+    /* 针对较新版本的轨道颜色覆盖 */
+    .stSlider [data-baseweb="slider"] > div > div {{
+        background: {DEEP_BLUE} !important;
+    }}
 
-    /* 4. 强制修改 Slider 圆钮颜色 */
-    .stSlider [role="slider"] {
-        background-color: #1f77b4 !important;
-        border: 2px solid #1f77b4 !important;
-    }
-
-    /* 5. 修改所有 Header 标题颜色 */
-    h1, h2, h3 {
-        color: #1f77b4 !important;
-    }
+    /* 5. 分割线颜色 */
+    hr {{
+        border-top: 2px solid {DEEP_BLUE};
+    }}
     </style>
     """, unsafe_allow_html=True)
 
