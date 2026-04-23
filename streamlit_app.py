@@ -17,11 +17,6 @@ st.markdown(f"""
     font-weight: 600;
 }}
 
-/* ✅ 整条轨道（灰色底） */
-.stSlider [data-baseweb="slider"] > div {{
-    background-color: #ddd !important;
-    height: 4px !important;
-}}
 
 /* ✅ 已滑动部分（蓝色） */
 .stSlider [data-baseweb="slider"] > div > div {{
