@@ -177,18 +177,20 @@ def calculate_target_price(df, profit_margin):
     )
     return df
 
-# 执行计算
-# final_df = calculate_target_price(final_df, target_profit_margin)
 
 final_df['Current_Avg_Leased'] = (
     final_df['Already_Leased_Rev'] / final_df['Leased_Units']
 ).fillna(0)
 
 # 如果出现 Leased_Units 为 0 导致结果为无穷大 (inf)，可以进行修正
-final_df['Current_Avg_Leased'] = final_df['Current_Avg_Leased'].replace([np.inf, -np.inf], 0)
-final_df['Est_NOI'] = final_df['Already_Leased_Rev']-final_df['Total_Fixed']-final_df['Leased_Units']*50 - final_df['Already_Leased_Rev']*0.12
+final_df['Est_NOI'] = (
+    final_df['Already_Leased_Rev'] - 
+    final_df['Total_Fixed'] - 
+    (final_df['Leased_Units'] * 50) - 
+    (final_df['Already_Leased_Rev'] * final_df['Variable_Rate'])
+)
 
-
+st.dataframe(final_df)
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     # 1. 基础静态数据（这些是基于当前现状，不会随矩阵模拟改变）
     total_units = df['Total Unit'].sum()
@@ -321,7 +323,7 @@ st.subheader("Sensitivity Analysis")
 # 局部滑轨控制矩阵范围
 c1, c2 = st.columns(2)
 with c1:
-    r_range = st.slider("Rent", 800, 2000, (800, 2000), step=50, key="prop_rent")
+    r_range = st.slider("Rent", 400, 2000, (800, 2000), step=50, key="prop_rent")
 with c2:
     v_range = st.slider("Vacancy", 0, int((prop_data['Total Unit']-prop_data['Leased_Units'])), (0, 5), key="prop_vac")
 
