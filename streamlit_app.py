@@ -268,7 +268,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
 st.title("PROPERTY LEASING STRATEGY")
 
 all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
-selected_id = st.selectbox("Select property", all_prop_ids)
+prop_id = st.selectbox("Select property", all_prop_ids)
 
 # 获取当前物业的基础数据
 current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
