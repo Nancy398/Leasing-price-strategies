@@ -13,7 +13,7 @@ APP_TOKEN = "Bu3QbY095aE5H1sdXtvjoRG4pjb"
 TABLE_ID = "tbldXd7TSURHd0sI"
 
 # 2. 获取访问令牌 Tenant Access Token
-@st.cache_data(ttl=7000) # 缓存 token，避免频繁请求
+# @st.cache_data(ttl=7000) # 缓存 token，避免频繁请求
 def get_tenant_access_token():
     url = "https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal"
     payload = {"app_id": APP_ID, "app_secret": APP_SECRET}
@@ -23,26 +23,31 @@ def get_tenant_access_token():
 
 def fetch_bitable_data():
     token = get_tenant_access_token()
-    
-    url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{TABLE_ID}/records"
+
+    if not token:
+        st.error("❌ token 是空的")
+        return pd.DataFrame()
+
     headers = {"Authorization": f"Bearer {token}"}
     
+    url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{TABLE_ID}/records"
     res = requests.get(url, headers=headers)
     data = res.json()
 
-    # ✅ 如果 token 失效，自动重试一次
-    if data.get("code") in [99991663, 99991661]:  # token 相关错误
-        token = get_tenant_access_token()  # 重新拿
+    # 🔥 关键：token 无效时强制重新获取（绕过 cache）
+    if data.get("msg") == "Invalid access token for authorization":
+        st.warning("⚠️ token 失效，重新获取中...")
+        
+        token = get_tenant_access_token()  # 再拿一次
         headers = {"Authorization": f"Bearer {token}"}
         res = requests.get(url, headers=headers)
         data = res.json()
 
     if data.get("code") == 0:
         items = data.get("data", {}).get("items", [])
-        flat_data = [item['fields'] for item in items]
-        return pd.DataFrame(flat_data)
+        return pd.DataFrame([i["fields"] for i in items])
     else:
-        st.error(f"抓取失败: {data.get('msg')}")
+        st.error(f"❌ 抓取失败: {data}")
         return pd.DataFrame()
         
 leases_df = pd.read_csv("Leases.csv")
