@@ -134,17 +134,17 @@ final_df['Occupancy %'] = (
 
 
 def calculate_target_price(df, profit_margin):
-    # VariableRate: IF(Type == "MH", 0.12, 0)
-    def get_mgmt_rate(row):
-        if row['Type'] == "MH":
-            return 0.12
-        elif row['Type'] == "ML":
-            return 0.02
-        else:
-            return 0.0
+    # # VariableRate: IF(Type == "MH", 0.12, 0)
+    # def get_mgmt_rate(row):
+    #     if row['Type'] == "MH":
+    #         return 0.12
+    #     elif row['Type'] == "ML":
+    #         return 0.02
+    #     else:
+    #         return 0.0
             
-    df['Variable_Rate'] = df.apply(get_mgmt_rate, axis=1)
-    df['Denominator'] = 1 - df['Variable_Rate']
+    # df['Variable_Rate'] = df.apply(get_mgmt_rate, axis=1)
+    # df['Denominator'] = 1 - df['Variable_Rate']
     
     # --- 2. 成本汇总 ---
     # TotalCommission = Total Unit * 50
@@ -206,14 +206,14 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     # 提取固定成本中不随出租数变化的部分
     other_fixed_cost = total_fixed_base_cost
     
-    # 2. 确定管理费率 (如果是 MH 类型则为 12%)
-    def get_matrix_mgmt_rate(prop_type):
-        if prop_type == "MH":
-            return 0.12
-        elif prop_type == "ML":
-            return 0.02
-        else:
-            return 0.0
+    # # 2. 确定管理费率 (如果是 MH 类型则为 12%)
+    # def get_matrix_mgmt_rate(prop_type):
+    #     if prop_type == "MH":
+    #         return 0.12
+    #     elif prop_type == "ML":
+    #         return 0.02
+    #     else:
+    #         return 0.0
 
     # 兼容处理：如果是 Series 拿第一个值，如果是字符串直接用
     p_type = df['Type'].iloc[0] if isinstance(df['Type'], pd.Series) else df['Type']
@@ -264,7 +264,7 @@ with col2:
 with col3:
     # 这里的 Est_NOI 可以是当前状态下的 NOI
     # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
-    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*0.88 - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
+    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
 
 with col4:    
     # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
