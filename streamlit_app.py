@@ -289,7 +289,7 @@ if view_mode == "Whole":
         'Total_Commission': company_portfolio['Total_Commission'].sum()
     }
     st.dataframe(prop_data)
-    prop_data['Variable_Rate'] = set_mgmt_rate(df['Type'])
+    prop_data['Variable_Rate'] = set_mgmt_rate(prop_data['Type'])
     prop_data = calculate(prop_data)
     st.dataframe(prop_data)
         # --- 2. 关键指标卡片 ---
