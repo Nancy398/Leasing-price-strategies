@@ -186,32 +186,49 @@ final_df['Est_NOI'] = final_df['Already_Leased_Rev']-final_df['Total_Fixed']-fin
 
 
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
+    # 1. 基础静态数据（这些是基于当前现状，不会随矩阵模拟改变）
     total_units = df['Total Unit'].sum()
     current_leased_count = df['Leased_Units'].sum()
-    active_leased_rev = df['Already_Leased_Rev'].sum()
+    active_leased_rev = df['Already_Leased_Rev'].sum()  # 已经租出去的房子的总收入
     total_fixed_base_cost = df['Total_Fixed'].sum()
     
+    # 提取固定成本中不随出租数变化的部分
     other_fixed_cost = total_fixed_base_cost - (total_units * 50)
-    max_available = total_units - current_leased_count
+    
+    # 2. 确定管理费率 (如果是 MH 类型则为 12%)
+    mgmt_rate = 0.12 if (df['Type'] == 'MH').any() else 0.0
 
     matrix_data = []
+    
+    # 3. 开始模拟
     for rent in rent_levels:
-        row = {"Rent": f"${rent}"}
+        # 格式化 Rent 显示，增加逗号
+        row = {"Rent": f"${rent:,.0f}"} 
+        
         for vac in vac_levels:
-            # 模拟逻辑
-            new_leased = max(max_available - vac, 0)
-            total_leased = current_leased_count + new_leased
-            total_rev = active_leased_rev + (new_leased * rent)
+            # --- 模拟逻辑的核心修改 ---
+            # 这里的 vac 代表“在当前未租房源中，依然保持空置的数量”
+            # max_available 是目前还没租出去的总房源
+            max_available = total_units - current_leased_count
             
-            # 成本逻辑
-            mgmt_rate = 0.12 if (df['Type'] == 'MH').any() else 0.0
-            noi = (total_rev * (1 - mgmt_rate)) - (total_leased * 50) - other_fixed_cost
+            # 实际上新租出去的数量 = 还没租出去的 - 模拟空置的
+            new_leased_count = max(max_available - vac, 0)
             
-            row[f"{vac}"] = noi
+            # 总出租数 = 现状已租 + 模拟新租
+            total_leased_total = current_leased_count + new_leased_count
+            
+            # 总收入 = 现状已租收入 + (新租出去的数量 * 模拟的平均单价)
+            total_rev = active_leased_rev + (new_leased_count * rent)
+            
+            # NOI 计算公式: (总收入 * (1 - 管理费率)) - (总出租数 * 变动成本50) - 固定成本
+            noi = (total_rev * (1 - mgmt_rate)) - (total_leased_total * 50) - other_fixed_cost
+            
+            # 列名显示为空置数
+            row[f"Vacant: {vac}"] = noi
+            
         matrix_data.append(row)
     
     return pd.DataFrame(matrix_data).set_index("Rent")
-
 
 ##----SHOW-----
 st.title("PROPERTY LEASING STRATEGY")
