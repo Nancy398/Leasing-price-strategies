@@ -5,6 +5,7 @@ import numpy as np
 import plotly.graph_objects as go 
 import plotly.express as px
 
+
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
 APP_ID = st.secrets["Larksuite"]["APP_ID"]
 APP_SECRET = st.secrets["Larksuite"]["APP_SECRET"]
@@ -12,32 +13,38 @@ APP_TOKEN = "Bu3QbY095aE5H1sdXtvjoRG4pjb"
 TABLE_ID = "tbldXd7TSURHd0sI"
 
 # 2. 获取访问令牌 Tenant Access Token
-@st.cache_data(ttl=7200) # 缓存 token，避免频繁请求
+@st.cache_data(ttl=7000) # 缓存 token，避免频繁请求
 def get_tenant_access_token():
     url = "https://open.larksuite.com/open-apis/auth/v3/tenant_access_token/internal"
     payload = {"app_id": APP_ID, "app_secret": APP_SECRET}
     r = requests.post(url, json=payload)
     return r.json().get("tenant_access_token")
 
-# 3. 抓取多维表格数据
+
 def fetch_bitable_data():
     token = get_tenant_access_token()
+    
     url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{TABLE_ID}/records"
     headers = {"Authorization": f"Bearer {token}"}
     
-    # 注意：如果数据量大，需要处理分页 (page_token)
     res = requests.get(url, headers=headers)
     data = res.json()
-    
+
+    # ✅ 如果 token 失效，自动重试一次
+    if data.get("code") in [99991663, 99991661]:  # token 相关错误
+        token = get_tenant_access_token()  # 重新拿
+        headers = {"Authorization": f"Bearer {token}"}
+        res = requests.get(url, headers=headers)
+        data = res.json()
+
     if data.get("code") == 0:
         items = data.get("data", {}).get("items", [])
-        # 提取每一行的 fields 内容
         flat_data = [item['fields'] for item in items]
         return pd.DataFrame(flat_data)
     else:
         st.error(f"抓取失败: {data.get('msg')}")
         return pd.DataFrame()
-
+        
 leases_df = pd.read_csv("Leases.csv")
 lark_df = fetch_bitable_data() 
 
