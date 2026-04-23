@@ -392,30 +392,4 @@ if view_mode == "Single":
 else:
     st.title(f"🏢 {current_company} Whole")
     
-    # 1. 公司层面的汇总 KPI
-    c1, c2, c3 = st.columns(3)
-    c1.metric("公司总 NOI", f"${company_portfolio['Est_NOI'].sum():,.0f}")
-    c2.metric("平均出租率", f"{company_portfolio['Occupancy %'].mean():.1%}")
-    c3.metric("总房间数", f"{int(company_portfolio['Total Unit'].sum())}")
-    
-    # 2. 物业对比矩阵（带深蓝色渐变）
-    st.subheader("旗下物业经营对比")
-    comparison_df = company_portfolio[['Property Name', 'Type', 'Occupancy %', 'Est_NOI', 'Breakeven_Rent']]
-    
-    st.dataframe(
-        comparison_df.style.background_gradient(cmap='Blues', subset=['Est_NOI'])
-        .format({'Occupancy %': '{:.1%}', 'Est_NOI': '${:,.0f}', 'Breakeven_Rent': '${:,.2f}'}),
-        use_container_width=True
-    )
-    
-    # 3. 组合租金缺口分析（柱状图）
-    import plotly.express as px
-    fig = px.bar(
-        company_portfolio, 
-        x='Property Name', 
-        y='Gap_To_Fill',
-        title="各物业保本缺口对比",
-        color_discrete_sequence=['#003366'] # 统一深蓝色
-    )
-    st.plotly_chart(fig, use_container_width=True)
     
