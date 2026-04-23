@@ -272,7 +272,6 @@ st.title("PROPERTY LEASING STRATEGY")
 all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
 selected_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
 prop_data = final_df[final_df['Property ID'] == selected_id].iloc[0]
-st.dataframe(prop_data)
 current_company = prop_data['Company']
 company_portfolio = final_df[final_df['Company'] == current_company]
 st.dataframe(company_portfolio)
