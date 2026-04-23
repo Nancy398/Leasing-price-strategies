@@ -133,7 +133,7 @@ def set_mgmt_rate(prop_type):
             return 0.02
         else:
             return 0.0    
-final_df['Variable_Rate'] = df['Type'].apply(set_mgmt_rate)
+final_df['Variable_Rate'] = final_df['Type'].apply(set_mgmt_rate)
 
 def calculate(df):
     df['Denominator'] = 1 - df['Variable_Rate']
