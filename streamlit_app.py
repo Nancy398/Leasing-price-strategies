@@ -300,7 +300,7 @@ if view_mode == "Whole":
     col1, col2, col3, col4 = st.columns(4)
         
     with col1:
-        st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units'])
+        st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
         
     with col2:
         st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent'].sum():.2f}")
