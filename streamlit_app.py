@@ -5,38 +5,6 @@ import numpy as np
 import plotly.graph_objects as go 
 import plotly.express as px
 
-# --- 样式注入：将 Slider 和其标题改为蓝色调 ---
-DEEP_BLUE = "#003366" 
-
-st.markdown(f"""
-<style>
-
-/* Slider 标题 */
-.stSlider label {{
-    color: {DEEP_BLUE} !important;
-    font-weight: 600;
-}}
-
-
-/* ✅ 已滑动部分（蓝色） */
-.stSlider [data-baseweb="slider"] > div > div {{
-    background-color: {DEEP_BLUE} !important;
-}}
-
-/* ✅ 圆点 */
-.stSlider [role="slider"] {{
-    background-color: {DEEP_BLUE} !important;
-    border: 2px solid {DEEP_BLUE} !important;
-}}
-
-/* ✅ 修复数字变按钮问题（关键） */
-.stSlider span {{
-    background: transparent !important;
-    color: inherit !important;
-}}
-
-</style>
-""", unsafe_allow_html=True)
 
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
 APP_ID = st.secrets["Larksuite"]["APP_ID"]
@@ -385,7 +353,7 @@ st.plotly_chart(fig_gauge, use_container_width=True)
 
 # --- 4. 敏感性分析矩阵 ---
 st.write("---")
-st.subheader("NOI 敏感性分析 (单一物业)")
+st.subheader("Sensitivity Analysis")
 
 # 局部滑轨控制矩阵范围
 c1, c2 = st.columns(2)
