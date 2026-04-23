@@ -26,7 +26,7 @@ def fetch_bitable_data(TABLE_ID):
     token = get_tenant_access_token()
 
     if not token:
-        st.error("❌ token 是空的")
+        st.error("[Sticker] token 是空的")
         return pd.DataFrame()
 
     headers = {"Authorization": f"Bearer {token}"}
@@ -35,9 +35,9 @@ def fetch_bitable_data(TABLE_ID):
     res = requests.get(url, headers=headers)
     data = res.json()
 
-    # 🔥 关键：token 无效时强制重新获取（绕过 cache）
+    # [Sticker] 关键：token 无效时强制重新获取（绕过 cache）
     if data.get("msg") == "Invalid access token for authorization":
-        st.warning("⚠️ token 失效，重新获取中...")
+        st.warning("[Sticker] token 失效，重新获取中...")
         
         token = get_tenant_access_token()  # 再拿一次
         headers = {"Authorization": f"Bearer {token}"}
@@ -48,7 +48,7 @@ def fetch_bitable_data(TABLE_ID):
         items = data.get("data", {}).get("items", [])
         return pd.DataFrame([i["fields"] for i in items])
     else:
-        st.error(f"❌ 抓取失败: {data}")
+        st.error(f"[Sticker] 抓取失败: {data}")
         return pd.DataFrame()
         
 leases_df = pd.read_csv("Leases.csv")
@@ -124,105 +124,119 @@ final_df = property_df.merge(cost_summary, on='Property ID', how='left') \
 final_df['Leased_Units'] = final_df['Leased_Units'].fillna(0)
 final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
 final_df['Total_Fixed'] = final_df['Total_Fixed']+final_df['Total Unit']*30
-final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
-final_df['Total_Commission'] = final_df['Total Unit'] * 50
-def set_mgmt_rate(prop_type):
-        if prop_type == "MH":
-            return 0.12
-        elif prop_type == "ML":
-            return 0.02
-        else:
-            return 0.0    
-final_df['Variable_Rate'] = final_df['Type'].apply(set_mgmt_rate)
 
-def calculate(df):
-    df['Denominator'] = 1 - df['Variable_Rate']
+final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
+
+def set_mgmt_rate(prop_type):
+    if prop_type == "MH":
+        return 0.12
+    elif prop_type == "ML":
+        return 0.02
+    else:
+        return 0.0
+
+final_df['Variable_Rate'] = final_df['Type'].apply(set_mgmt_rate)
+final_df['Denominator'] = 1 - final_df['Variable_Rate']
+
+final_df['Total_Commission'] = final_df['Total Unit'] * 50
+final_df['Total_Required_Costs'] = final_df['Total_Fixed'] + final_df['Total_Commission']
+
+final_df['Required_Total_Rev'] = final_df['Total_Required_Costs'] / final_df['Denominator']
+final_df['Gap_To_Fill'] = final_df['Required_Total_Rev'] - final_df['Already_Leased_Rev']
+final_df['Breakeven_Rent'] = np.where(
+    final_df['Vacant_Units'] <= 0,
+    0,
+    final_df['Gap_To_Fill'] / final_df['Vacant_Units']
+)
+# Current Average Leased
+final_df['Current_Avg_Leased'] = (
+    final_df['Already_Leased_Rev'] / final_df['Leased_Units']
+).fillna(0)
+
+# 如果出现 Leased_Units 为 0 导致结果为无穷大 (inf)，可以进行修正
+final_df['Current_Avg_Leased'] = final_df['Current_Avg_Leased'].replace([np.inf, -np.inf], 0)
+
+#Occupancy
+final_df['Occupancy %'] = (
+    final_df['Leased_Units'] / final_df['Total Unit']
+).fillna(0)
+
+
+
+def calculate_target_price(df, profit_margin):
+    # # VariableRate: IF(Type == "MH", 0.12, 0)
+    # def get_mgmt_rate(row):
+    #     if row['Type'] == "MH":
+    #         return 0.12
+    #     elif row['Type'] == "ML":
+    #         return 0.02
+    #     else:
+    #         return 0.0
+            
+    # df['Variable_Rate'] = df.apply(get_mgmt_rate, axis=1)
+    # df['Denominator'] = 1 - df['Variable_Rate']
+    
+    # --- 2. 成本汇总 ---
+    # TotalCommission = Total Unit * 50
+    df['Total_Commission'] = df['Total Unit'] * 50
+    # TotalRequiredCosts = TotalFixed + TotalCommission
     df['Total_Required_Costs'] = df['Total_Fixed'] + df['Total_Commission']
     
-    df['Required_Total_Rev'] = df['Total_Required_Costs'] / df['Denominator']
-    df['Gap_To_Fill'] = df['Required_Total_Rev'] - df['Already_Leased_Rev']
-    df['Breakeven_Rent'] = np.where(
-        df['Vacant_Units'] <= 0,
-        0,
-        df['Gap_To_Fill'] / df['Vacant_Units']
+    # --- 3. 核心定价逻辑 ---
+    # Required_Total_Rev = TotalRequiredCosts / Denominator
+    # 处理 Denominator <= 0 的极端情况
+    df['Required_Total_Rev'] = np.where(
+        df['Denominator'] <= 0,
+        np.nan, 
+        df['Total_Required_Costs'] * (1+ profit_margin)/ df['Denominator']
     )
-    # Current Average Leased
-    df['Current_Avg_Leased'] = (
-        df['Already_Leased_Rev'] / df['Leased_Units']
-    ).fillna(0)
     
-    # 如果出现 Leased_Units 为 0 导致结果为无穷大 (inf)，可以进行修正
-    df['Current_Avg_Leased'] = df['Current_Avg_Leased'].replace([np.inf, -np.inf], 0)
+    # Gap_To_Fill = Required_Total_Rev - Already_Leased_Rev
+    df['Gap_To_Fill'] = df['Required_Total_Rev'] - df['Already_Leased_Rev']
     
-    #Occupancy
-    df['Occupancy %'] = (
-        df['Leased_Units'] / df['Total Unit']
-    ).fillna(0)
+    # --- 4. 最终输出 ---
+    # 逻辑判断：如果分母异常、如果没有空置房、或者计算结果
+    conditions = [
+        (df['Denominator'] <= 0),
+        (df['Vacant_Units'] <= 0)
+    ]
+    choices = [
+        np.nan, # 表示 Error: High Margin
+        0       # 表示 Full / No Vacancy (或者你可以设为 0)
+    ]
     
-    
-    
-    def calculate_target_price(df, profit_margin):
-        # --- 2. 成本汇总 ---
-        # TotalCommission = Total Unit * 50
-        df['Total_Commission'] = df['Total Unit'] * 50
-        # TotalRequiredCosts = TotalFixed + TotalCommission
-        df['Total_Required_Costs'] = df['Total_Fixed'] + df['Total_Commission']
-        
-        # --- 3. 核心定价逻辑 ---
-        # Required_Total_Rev = TotalRequiredCosts / Denominator
-        # 处理 Denominator <= 0 的极端情况
-        df['Required_Total_Rev'] = np.where(
-            df['Denominator'] <= 0,
-            np.nan, 
-            df['Total_Required_Costs'] * (1+ profit_margin)/ df['Denominator']
-        )
-        
-        # Gap_To_Fill = Required_Total_Rev - Already_Leased_Rev
-        df['Gap_To_Fill'] = df['Required_Total_Rev'] - df['Already_Leased_Rev']
-        
-        # --- 4. 最终输出 ---
-        # 逻辑判断：如果分母异常、如果没有空置房、或者计算结果
-        conditions = [
-            (df['Denominator'] <= 0),
-            (df['Vacant_Units'] <= 0)
-        ]
-        choices = [
-            np.nan, # 表示 Error: High Margin
-            0       # 表示 Full / No Vacancy (或者你可以设为 0)
-        ]
-        
-        df['Target_Remaining_Price'] = np.select(
-            conditions, 
-            choices, 
-            default=df['Gap_To_Fill'] / df['Vacant_Units']
-        )
-        return df
-    
-    
-    final_df['Current_Avg_Leased'] = (
-        final_df['Already_Leased_Rev'] / final_df['Leased_Units']
-    ).fillna(0)
-    
-    # 如果出现 Leased_Units 为 0 导致结果为无穷大 (inf)，可以进行修正
-    df['Est_NOI'] = (
-        df['Already_Leased_Rev'] - 
-        df['Total_Fixed'] - 
-        (df['Leased_Units'] * 50) - 
-        (df['Already_Leased_Rev'] * df['Variable_Rate'])
+    df['Target_Remaining_Price'] = np.select(
+        conditions, 
+        choices, 
+        default=df['Gap_To_Fill'] / df['Vacant_Units']
     )
     return df
-    
+
+
+final_df['Current_Avg_Leased'] = (
+    final_df['Already_Leased_Rev'] / final_df['Leased_Units']
+).fillna(0)
+
+# 如果出现 Leased_Units 为 0 导致结果为无穷大 (inf)，可以进行修正
+final_df['Est_NOI'] = (
+    final_df['Already_Leased_Rev'] - 
+    final_df['Total_Fixed'] - 
+    (final_df['Leased_Units'] * 50) - 
+    (final_df['Already_Leased_Rev'] * final_df['Variable_Rate'])
+)
+
+# st.dataframe(final_df)
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     # 1. 基础静态数据（这些是基于当前现状，不会随矩阵模拟改变）
     total_units = df['Total Unit'].sum()
     current_leased_count = df['Leased_Units'].sum()
     active_leased_rev = df['Already_Leased_Rev'].sum()  # 已经租出去的房子的总收入
     total_fixed_base_cost = df['Total_Fixed'].sum()
-        
+    
     # 提取固定成本中不随出租数变化的部分
     other_fixed_cost = total_fixed_base_cost
-        
-     # # 2. 确定管理费率 (如果是 MH 类型则为 12%)
+    
+    # # 2. 确定管理费率 (如果是 MH 类型则为 12%)
     def get_matrix_mgmt_rate(prop_type):
         if prop_type == "MH":
             return 0.12
@@ -230,18 +244,18 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
             return 0.02
         else:
             return 0.0
-    
-        # 兼容处理：如果是 Series 拿第一个值，如果是字符串直接用
+
+    # 兼容处理：如果是 Series 拿第一个值，如果是字符串直接用
     p_type = df['Type'].iloc[0] if isinstance(df['Type'], pd.Series) else df['Type']
     mgmt_rate = get_matrix_mgmt_rate(p_type)
-    
+
     matrix_data = []
-        
-        # 3. 开始模拟
+    
+    # 3. 开始模拟
     for rent in rent_levels:
         # 格式化 Rent 显示，增加逗号
         row = {"Rent": f"${rent:,.0f}"} 
-            
+        
         for vac in vac_levels:
             max_available = total_units - current_leased_count
             new_leased_count = max(max_available - vac, 0)
@@ -251,127 +265,112 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
             row[f"Vacant: {vac}"] = noi
         matrix_data.append(row) 
     return pd.DataFrame(matrix_data).set_index("Rent")
-
-##----SHOW-----
+st.dataframe(final_df)
 ##----SHOW-----
 st.title("PROPERTY LEASING STRATEGY")
 
-all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
-prop_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
+# 假设 final_df 是你之前合并好并完成计算的 DataFrame
+prop_id = st.selectbox("选择物业 ID (Property ID)", options=final_df['Property ID'].unique())
 
-# 获取当前物业的基础数据
-current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
-current_company = current_prop_row['Company']
+# 获取选中物业的数据行
+prop_data = final_df[final_df['Property ID'] == prop_id].iloc[0]
 
-# 获取同公司组合
-company_portfolio = final_df[final_df['Company'] == current_company].copy()
-other_props_count = len(company_portfolio)
+# 展示地址
+st.markdown(f"### [Sticker] 地址: {prop_data['Address']}")
+st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
 
-# 视角选择
-view_mode = "Single"
-if other_props_count > 1:
-    st.sidebar.info(f"💡 该公司旗下共有 {other_props_count} 个物业")
-    view_mode = st.sidebar.radio("分析视角:", ["Single", "Whole"], index=0)
+# --- 2. 关键指标卡片 ---
+target_profit_pct = st.slider(
+    "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
+)
+col1, col2, col3, col4 = st.columns(4)
 
-# --- 核心数据准备 ---
-if view_mode == "Whole":
-    st.title(f"🏢 {current_company} Portfolio")
+with col1:
+    st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+
+with col2:
+    st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:.2f}")
+
+with col3:
+    # 这里的 Est_NOI 可以是当前状态下的 NOI
+    # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
+    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
+
+with col4:    
+    # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
+    target_margin = target_profit_pct / 100
+    denominator = 1 - prop_data['Variable_Rate'] - target_margin
     
-    # 汇总所有地址
-    all_addresses = company_portfolio['Address'].unique().tolist()
-    address_display = " | ".join([f"**{addr}**" if addr == current_prop_row['Address'] else addr for addr in all_addresses])
-    st.info(f"📍 组合地址: {address_display}")
-
-    # 1. 构造汇总后的 Series (agg_data)
-    # 注意：我们这里手动汇总，然后转成 Series 以适配后面的计算公式
-    agg_dict = {
-        'Property Name': "Whole Portfolio",
-        'Company': current_company,
-        'Type': company_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
-        'Total Unit': company_portfolio['Total Unit'].sum(),
-        'Total_Fixed': company_portfolio['Total_Fixed'].sum(),
-        'Leased_Units': company_portfolio['Leased_Units'].sum(),
-        'Already_Leased_Rev': company_portfolio['Already_Leased_Rev'].sum(),
-        'Vacant_Units': company_portfolio['Vacant_Units'].sum(),
-        'Total_Commission': company_portfolio['Total Unit'].sum() * 50
-    }
-    prop_data = pd.Series(agg_dict)
-    
-    # 2. 计算动态字段
-    # 重新计算管理费率 (如果是汇总，建议取平均或指定)
-    prop_data['Variable_Rate'] = 0.12 if prop_data['Type'] == "MH" else (0.02 if prop_data['Type'] == "ML" else 0.0)
-    prop_data['Denominator'] = 1 - prop_data['Variable_Rate']
-    prop_data['Occupancy %'] = prop_data['Leased_Units'] / prop_data['Total Unit'] if prop_data['Total Unit'] > 0 else 0
-    
-    # 矩阵分析的对象是整个组合
-    matrix_df = company_portfolio
-
-else:
-    # --- Single 视角 ---
-    st.markdown(f"### [Sticker] 地址: {current_prop_row['Address']}")
-    st.write(f"物业类型: {current_prop_row['Type']} | 公司: {current_prop_row['Company']}")
-
-    
-    # 运行一次计算逻辑填充字段
-    # 注意：为了不报错，我们将这一行转成 DataFrame 算完再拿出来
-    temp_df = calculate(final_df[final_df['Property ID'] == prop_id].copy())
-    prop_data = temp_df.iloc[0]
-    
-    # 矩阵分析的对象只是这一个物业
-    matrix_df = final_df[final_df['Property ID'] == prop_id]
-
-# --- 共享显示逻辑 (UI 统一) ---
-
-# 1. 利润控制滑轨
-target_profit_pct = st.slider("Set Target Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider")
-
-# 2. 关键指标卡片
-c1, c2, c3, c4 = st.columns(4)
-with c1:
-    st.metric("Vacant Units", int(prop_data['Vacant_Units']))
-
-with c2:
-    # 保本租金计算
-    total_costs = prop_data['Total_Fixed'] + prop_data['Total_Commission']
-    breakeven_total_rev = total_costs / prop_data['Denominator']
-    gap = breakeven_total_rev - prop_data['Already_Leased_Rev']
-    be_rent = gap / prop_data['Vacant_Units'] if prop_data['Vacant_Units'] > 0 else 0
-    st.metric("Breakeven Rent", f"${max(0, be_rent):,.2f}")
-
-with c3:
-    # 预计当前 NOI
-    current_noi = (prop_data['Already_Leased_Rev'] * prop_data['Denominator']) - (prop_data['Leased_Units'] * 50) - prop_data['Total_Fixed']
-    st.metric("Est. NOI (Current)", f"${current_noi:,.0f}")
-
-with c4:
-    # 目标租金计算 (包含 Margin)
-    margin = target_profit_pct / 100
-    denom_with_margin = 1 - prop_data['Variable_Rate'] - margin
-    
-    if denom_with_margin > 0 and prop_data['Vacant_Units'] > 0:
-        total_costs = prop_data['Total_Fixed'] + prop_data['Total_Commission']
-        target_rev = total_costs / denom_with_margin
-        target_price = (target_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
-        st.metric("Target Rent", f"${max(0, target_price):,.2f}")
+    if denominator > 0 and prop_data['Vacant_Units'] > 0:
+        total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
+        req_rev = total_req_costs / denominator
+        target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
     else:
-        st.metric("Target Rent", "N/A")
+        target_price = 0  # 或者显示 np.nan
+    
+    # C. 最后渲染数字卡片
+    # 这样它显示的就是刚刚算好的最新 target_price
+    st.metric("目标租金 (Target)", f"${target_price:,.2f}")
 
-# 3. 仪表盘
+# --- 3. 出租率仪表盘 ---
+# --- 3. 出租率仪表盘 (蓝色调版) ---
 st.write("---")
 occ_rate = float(prop_data['Occupancy %']) * 100
-# ... (此处放你之前的 go.Figure 仪表盘代码，使用 occ_rate 变量) ...
+
+fig_gauge = go.Figure(go.Indicator(
+    mode = "gauge+number",
+    value = occ_rate,
+    number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
+    title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
+    domain = {'x': [0, 1], 'y': [0, 1]},
+    gauge = {
+        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
+        'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
+        'bgcolor': "white",
+        'borderwidth': 1,
+        'bordercolor': "#e0e0e0",
+        'steps': [
+            {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
+            {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
+            {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
+        ],
+        'threshold': {
+            'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
+            'thickness': 0.75,
+            'value': 95}
+    }
+))
+
+fig_gauge.update_layout(
+    height=300, 
+    margin=dict(l=30, r=30, t=50, b=20),
+    paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+)
+
 st.plotly_chart(fig_gauge, use_container_width=True)
 
-# 4. 敏感性分析
-st.write("---")
-st.subheader("Sensitivity Analysis (NOI)")
-r_min, r_max = st.slider("Rent Range", 400, 3000, (800, 2000), 50)
-v_max = int(prop_data['Vacant_Units']) if prop_data['Vacant_Units'] > 1 else 5
-v_range = st.slider("Vacancy Range", 0, v_max, (0, min(5, v_max)))
 
-rent_levels = np.arange(r_min, r_max + 50, 100)
+
+# --- 4. 敏感性分析矩阵 ---
+st.write("---")
+st.subheader("Sensitivity Analysis")
+
+# 局部滑轨控制矩阵范围
+c1, c2 = st.columns(2)
+with c1:
+    r_range = st.slider("Rent", 400, 2000, (800, 2000), step=50, key="prop_rent")
+with c2:
+    v_range = st.slider("Vacancy", 0, int((prop_data['Total Unit']-prop_data['Leased_Units'])), (0, 5), key="prop_vac")
+
+# 生成矩阵 (传入只含该物业的 DataFrame)
+single_prop_df = final_df[final_df['Property ID'] == prop_id]
+rent_levels = np.arange(r_range[0], r_range[1] + 50, 100)
 vac_levels = list(range(v_range[0], v_range[1] + 1))
 
-# 传入刚才选定的 matrix_df (可能是单体，也可能是整个 Portfolio)
-noi_matrix = generate_dynamic_noi_matrix(matrix_df, rent_levels, vac_levels)
-st.dataframe(noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"), use_container_width=True)
+noi_matrix = generate_dynamic_noi_matrix(single_prop_df, rent_levels, vac_levels)
+
+# 展示矩阵
+st.dataframe(
+    noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
+    use_container_width=True
+)
