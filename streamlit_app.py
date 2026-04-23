@@ -61,6 +61,11 @@ lark_df_UCLA = lark_df_UCLA[[
     "Lease Status"
 ]].copy()
 
+lark_df_UCLA = lark_df_UCLA.rename(columns={
+    "Unit - Room Number": "Room Number",
+    "Rental Price": "Real Price"
+})
+
 lark_df_UCLA["Monthly Concession"] = 0
 
 lark_df_USC = lark_df_USC[[
