@@ -313,9 +313,10 @@ if view_mode == "Whole":
         prop_data['Gap_To_Fill'] / prop_data['Vacant_Units']
     )
 # Current Average Leased
-    prop_data['Current_Avg_Leased'] = (
-        prop_data['Already_Leased_Rev'] / prop_data['Leased_Units']
-    ).fillna(0)
+    if prop_data['Leased_Units'] > 0:
+        prop_data['Current_Avg_Leased'] = prop_data['Already_Leased_Rev'] / prop_data['Leased_Units']
+    else:
+        prop_data['Current_Avg_Leased'] = 0.0
     target_profit_pct = st.slider(
         "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
     )
