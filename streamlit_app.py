@@ -126,17 +126,16 @@ final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
 final_df['Total_Fixed'] = final_df['Total_Fixed']+final_df['Total Unit']*30
 final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
 final_df['Total_Commission'] = final_df['Total Unit'] * 50
-
-def calculate(df):
-    def set_mgmt_rate(prop_type):
+def set_mgmt_rate(prop_type):
         if prop_type == "MH":
             return 0.12
         elif prop_type == "ML":
             return 0.02
         else:
-            return 0.0
-    
-    df['Variable_Rate'] = df['Type'].apply(set_mgmt_rate)
+            return 0.0    
+final_df['Variable_Rate'] = df['Type'].apply(set_mgmt_rate)
+
+def calculate(df):
     df['Denominator'] = 1 - df['Variable_Rate']
     df['Total_Required_Costs'] = df['Total_Fixed'] + df['Total_Commission']
     
@@ -290,6 +289,7 @@ if view_mode == "Whole":
         'Total_Commission': company_portfolio['Total_Commission'].sum()
     }
     st.dataframe(prop_data)
+    prop_data['Variable_Rate'] = set_mgmt_rate(df['Type'])
     prop_data = calculate(prop_data)
     st.dataframe(prop_data)
         # --- 2. 关键指标卡片 ---
