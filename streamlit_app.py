@@ -301,7 +301,6 @@ if view_mode == "Whole":
 
     # 构造聚合后的 prop_data (将所有物业看作一个整体)
     agg_dict = {
-        'Property Name': f"{current_company} Portfolio",
         'Total Unit': company_portfolio['Total Unit'].sum(),
         'Total_Fixed': company_portfolio['Total_Fixed'].sum(),
         'Leased_Units': company_portfolio['Leased_Units'].sum(),
@@ -316,7 +315,6 @@ if view_mode == "Whole":
     matrix_df = company_portfolio
 else:
     # Single 模式：直接使用选中的行
-    st.subheader(f"🏠 {current_prop_row['Property Name']} ({selected_id})")
     st.markdown(f"📍 地址: **{current_prop_row['Address']}**")
     st.write(f"物业类型: {current_prop_row['Type']} | 公司: {current_prop_row['Company']}")
     
@@ -419,5 +417,5 @@ st.dataframe(
 if view_mode == "Whole":
     st.write("---")
     st.subheader("Property Comparison Inside Portfolio")
-    comparison_df = company_portfolio[['Property ID', 'Property Name', 'Occupancy %', 'Est_NOI']]
+    comparison_df = company_portfolio[['Property ID', 'Occupancy %', 'Est_NOI']]
     st.dataframe(comparison_df.style.format({'Occupancy %': '{:.1%}', 'Est_NOI': '${:,.0f}'}), use_container_width=True)
