@@ -184,43 +184,6 @@ final_df['Current_Avg_Leased'] = (
 final_df['Current_Avg_Leased'] = final_df['Current_Avg_Leased'].replace([np.inf, -np.inf], 0)
 final_df['Est_NOI'] = final_df['Already_Leased_Rev']-final_df['Total_Fixed']-final_df['Leased_Units']*50 - final_df['Already_Leased_Rev']*0.12
 
-# # 格式化展示
-# st.dataframe(
-#     final_df[['Property ID', 'Type', 'Vacant_Units', 'Breakeven_Rent','Current_Avg_Leased','Est_NOI']],
-#     column_config={
-#         "Target_Remaining_Price": st.column_config.NumberColumn(
-#             "Target Price",
-#             format="$%.2f",
-#             help="为达到目标利润率，剩余空置房需收取的平均租金"
-#         )
-#     }
-# )
-
-# ##----Sensitivity Analysis-----
-# st.header("NOI 敏感性模拟器")
-
-# # --- 装置 1: 选择租金范围 ---
-# # 使用 select_slider 或 slider 的范围模式 (value 传入元组)
-# rent_min, rent_max = st.slider(
-#     "选择模拟租金范围 ($)",
-#     min_value=800,
-#     max_value=2000,
-#     value=(800, 1500), # 默认范围
-#     step=50
-# )
-
-# # --- 装置 2: 选择空置数范围 ---
-# vac_min, vac_max = st.slider(
-#     "选择模拟空置房数范围",
-#     min_value=0,
-#     max_value=30, # 建议设为总房间数的最大值
-#     value=(0, 10), # 默认显示 0 到 10 个空置
-#     step=1
-# )
-
-# # 生成动态的范围数组
-# rent_levels = np.arange(rent_min, rent_max + 50, 100) # 每 100 一个档位
-# vac_levels = list(range(vac_min, vac_max + 1))
 
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     total_units = df['Total Unit'].sum()
@@ -247,7 +210,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
             row[f"{vac}"] = noi
         matrix_data.append(row)
     
-    return pd.DataFrame(matrix_data).set_index("租金水平")
+    return pd.DataFrame(matrix_data).set_index("Rent")
 
 
 ##----SHOW-----
