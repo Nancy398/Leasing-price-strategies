@@ -249,22 +249,6 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     
     return pd.DataFrame(matrix_data).set_index("租金水平")
 
-# 计算矩阵
-noi_matrix = generate_dynamic_noi_matrix(final_df, rent_levels, vac_levels)
-
-st.subheader(f"NOI 模拟矩阵 (租金 {rent_min}-{rent_max} | 空置 {vac_min}-{vac_max})")
-
-# 自动为所有动态生成的列配置货币格式
-cols_config = {
-    col: st.column_config.NumberColumn(format="$%.0f") 
-    for col in noi_matrix.columns
-}
-
-st.dataframe(
-    noi_matrix,
-    column_config=cols_config,
-    use_container_width=True
-)
 
 ##----SHOW-----
 st.title("PROPERTY LEASING STRATEGY")
