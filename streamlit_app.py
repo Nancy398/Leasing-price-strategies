@@ -91,7 +91,16 @@ final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
 final_df['Total_Fixed'] = final_df['Total_Fixed']+final_df['Total Unit']*30
 
 final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
-final_df['Variable_Rate'] = final_df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
+
+def set_mgmt_rate(prop_type):
+    if prop_type == "MH":
+        return 0.12
+    elif prop_type == "Master Lease":
+        return 0.02
+    else:
+        return 0.0
+
+final_df['Variable_Rate'] = final_df['Type'].apply(set_mgmt_rate)
 final_df['Denominator'] = 1 - final_df['Variable_Rate']
 
 final_df['Total_Commission'] = final_df['Total Unit'] * 50
@@ -121,7 +130,15 @@ final_df['Occupancy %'] = (
 
 def calculate_target_price(df, profit_margin):
     # VariableRate: IF(Type == "MH", 0.12, 0)
-    df['Variable_Rate'] = df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
+    def get_mgmt_rate(row):
+        if row['Type'] == "MH":
+            return 0.12
+        elif row['Type'] == "Master Lease":
+            return 0.02
+        else:
+            return 0.0
+            
+    df['Variable_Rate'] = df.apply(get_mgmt_rate, axis=1)
     df['Denominator'] = 1 - df['Variable_Rate']
     
     # --- 2. 成本汇总 ---
@@ -183,7 +200,17 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     other_fixed_cost = total_fixed_base_cost
     
     # 2. 确定管理费率 (如果是 MH 类型则为 12%)
-    mgmt_rate = 0.12 if (df['Type'] == 'MH').any() else 0.0
+    def get_matrix_mgmt_rate(prop_type):
+        if prop_type == "MH":
+            return 0.12
+        elif prop_type == "Master Lease":
+            return 0.02
+        else:
+            return 0.0
+
+    # 兼容处理：如果是 Series 拿第一个值，如果是字符串直接用
+    p_type = df['Type'].iloc[0] if isinstance(df['Type'], pd.Series) else df['Type']
+    mgmt_rate = get_matrix_mgmt_rate(p_type)
 
     matrix_data = []
     
