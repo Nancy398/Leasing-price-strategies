@@ -244,10 +244,10 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
             mgmt_rate = 0.12 if (df['Type'] == 'MH').any() else 0.0
             noi = (total_rev * (1 - mgmt_rate)) - (total_leased * 50) - other_fixed_cost
             
-            row[f"空置 {vac}"] = noi
+            row[f"{vac}"] = noi
         matrix_data.append(row)
     
-    return pd.DataFrame(matrix_data).set_index("租金水平")
+    return pd.DataFrame(matrix_data).set_index("租金水平/空置数")
 
 
 ##----SHOW-----
@@ -342,9 +342,9 @@ st.subheader("Sensitivity Analysis")
 # 局部滑轨控制矩阵范围
 c1, c2 = st.columns(2)
 with c1:
-    r_range = st.slider("模拟租金范围", 800, 2000, (800, 2000), step=50, key="prop_rent")
+    r_range = st.slider("Rent", 800, 2000, (800, 2000), step=50, key="prop_rent")
 with c2:
-    v_range = st.slider("模拟空置数范围", 0, int(prop_data['Total Unit']), (0, 5), key="prop_vac")
+    v_range = st.slider("Vacancy", 0, int(prop_data['Total Unit']), (0, 5), key="prop_vac")
 
 # 生成矩阵 (传入只含该物业的 DataFrame)
 single_prop_df = final_df[final_df['Property ID'] == prop_id]
