@@ -127,7 +127,7 @@ final_df['Total_Fixed'] = final_df['Total_Fixed']+final_df['Total Unit']*30
 
 final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
 
-def calcualtion(df):
+def calculate(df):
     def set_mgmt_rate(prop_type):
         if prop_type == "MH":
             return 0.12
@@ -292,7 +292,7 @@ if view_mode == "Whole":
         'Total_Commission': company_portfolio['Total_Commission'].sum()
     }
     st.dataframe(prop_data)
-    prop_data = calculation(prop_data)
+    prop_data = calculate(prop_data)
     st.dataframe(prop_data)
         # --- 2. 关键指标卡片 ---
     target_profit_pct = st.slider(
