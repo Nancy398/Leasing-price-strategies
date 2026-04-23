@@ -270,8 +270,8 @@ st.dataframe(final_df)
 st.title("PROPERTY LEASING STRATEGY")
     
 all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
-selected_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
-prop_data = final_df[final_df['Property ID'] == selected_id].iloc[0]
+prop_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
+prop_data = final_df[final_df['Property ID'] == prop_id].iloc[0]
 current_company = prop_data['Company']
 company_portfolio = final_df[final_df['Company'] == current_company]
 other_props_count = len(company_portfolio)
