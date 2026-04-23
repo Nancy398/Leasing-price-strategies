@@ -301,7 +301,7 @@ if other_props_count > 1:
             st.rerun() # 点击后刷新页面以更新数据
 
     view_mode = st.session_state.current_view
-    st.write(view_mode)
+
 
 if view_mode == "Whole":
     all_addresses = company_portfolio['Address'].unique().tolist()
@@ -406,9 +406,9 @@ if view_mode == "Whole":
     
 
 else:
-    
+    prop_id = view_mode
+    prop_data = final_df[final_df['Property ID'] == prop_id].iloc[0]
     # 展示地址
-    prop_data = current_prop_row.copy()
     st.markdown(f"### 📍 地址: {prop_data['Address']}")
     st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
     
