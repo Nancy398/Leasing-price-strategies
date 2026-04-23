@@ -266,7 +266,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
         matrix_data.append(row) 
     return pd.DataFrame(matrix_data).set_index("Rent")
 st.dataframe(final_df)
-    ##----SHOW-----
+##----SHOW-----
     st.title("PROPERTY LEASING STRATEGY")
     
     all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
@@ -285,7 +285,7 @@ st.dataframe(final_df)
         st.sidebar.info(f"💡 该公司旗下共有 {other_props_count} 个物业")
         view_mode = st.sidebar.radio(
             "切换分析视角:",
-            ["Sngle", "Whole"],
+            ["Single", "Whole"],
             index=0
         )
     
@@ -394,5 +394,3 @@ st.dataframe(final_df)
     
     else:
         st.title(f"🏢 {current_company} Whole")
-    
-    
