@@ -225,7 +225,6 @@ final_df['Est_NOI'] = (
     (final_df['Already_Leased_Rev'] * final_df['Variable_Rate'])
 )
 
-# st.dataframe(final_df)
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     # 1. 基础静态数据（这些是基于当前现状，不会随矩阵模拟改变）
     total_units = df['Total Unit'].sum()
@@ -265,7 +264,6 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
             row[f"Vacant: {vac}"] = noi
         matrix_data.append(row) 
     return pd.DataFrame(matrix_data).set_index("Rent")
-st.dataframe(final_df)
 ##----SHOW-----
 st.title("PROPERTY LEASING STRATEGY")
 
@@ -390,7 +388,7 @@ if view_mode == "Whole":
 if view_mode == "Single":
     # 展示地址
     prop_data = current_prop_row.copy()
-    st.markdown(f"### [Sticker] 地址: {prop_data['Address']}")
+    st.markdown(f"### 📍 地址: {prop_data['Address']}")
     st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
     
     # --- 2. 关键指标卡片 ---
