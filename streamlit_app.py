@@ -287,8 +287,9 @@ if other_props_count > 1:
     )
     
 if view_mode == "Single":
+    st.title(f"🏢 {current_company} Whole")
     
-        # 展示地址
+else:    # 展示地址
     st.markdown(f"### 📍 地址: {prop_data['Address']}")
     st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
         
@@ -387,6 +388,3 @@ if view_mode == "Single":
         noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
         use_container_width=True
     )
-    
-else:
-    st.title(f"🏢 {current_company} Whole")
