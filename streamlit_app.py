@@ -117,26 +117,12 @@ final_df['Occupancy %'] = (
     final_df['Leased_Units'] / final_df['Total Unit']
 ).fillna(0)
 
-# 转换成百分比格式显示预览
-# final_df['Occupancy %'] = final_df['Occupancy %'].clip(0, 1) # 确保不会超过 100%
-
-# 如果计算出负数（说明现有租金已覆盖成本），通常置为 0
-# final_df['Breakeven_Rent'] = final_df['Breakeven_Rent'].clip(lower=0)
-
-# ##Target Price
-# target_profit_margin = st.sidebar.slider(
-#     "Target Profit Margin (%)", 
-#     min_value=0.0, 
-#     max_value=20.0, 
-#     value=5.0, 
-#     step=1.0
-# ) / 100
 
 
 def calculate_target_price(df, profit_margin):
     # VariableRate: IF(Type == "MH", 0.12, 0)
     df['Variable_Rate'] = df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
-    df['Denominator'] = 1 - df['Variable_Rate'] - profit_margin
+    df['Denominator'] = 1 - df['Variable_Rate']
     
     # --- 2. 成本汇总 ---
     # TotalCommission = Total Unit * 50
@@ -150,7 +136,7 @@ def calculate_target_price(df, profit_margin):
     df['Required_Total_Rev'] = np.where(
         df['Denominator'] <= 0,
         np.nan, 
-        df['Total_Required_Costs'] / df['Denominator']
+        df['Total_Required_Costs'] * (1+ profit_margin)/ df['Denominator']
     )
     
     # Gap_To_Fill = Required_Total_Rev - Already_Leased_Rev
@@ -194,7 +180,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     total_fixed_base_cost = df['Total_Fixed'].sum()
     
     # 提取固定成本中不随出租数变化的部分
-    other_fixed_cost = total_fixed_base_cost - (total_units * 50)
+    other_fixed_cost = total_fixed_base_cost
     
     # 2. 确定管理费率 (如果是 MH 类型则为 12%)
     mgmt_rate = 0.12 if (df['Type'] == 'MH').any() else 0.0
@@ -244,7 +230,7 @@ with col2:
 with col3:
     # 这里的 Est_NOI 可以是当前状态下的 NOI
     # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
-    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev'] - prop_data['Total_Fixed']:,.0f}")
+    st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*0.88 - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
 
 with col4:    
     # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
