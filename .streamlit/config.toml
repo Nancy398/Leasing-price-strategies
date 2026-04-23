@@ -1,0 +1,9 @@
+[theme]
+# 这个 primaryColor 是核心，会把滑轨左侧轨道、圆钮、数值气泡全部变蓝
+primaryColor = "#003366"
+
+# 其他配套颜色（深蓝黑文字 + 纯白背景）
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#001F3F"
+font = "sans serif"
