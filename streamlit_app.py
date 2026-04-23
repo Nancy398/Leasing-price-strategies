@@ -282,17 +282,25 @@ view_mode = prop_id
 
 if other_props_count > 1:
     st.write("---")
-    st.info(f"💡 该物业所属公司 **{current_company}** 旗下共有 {other_props_count} 个物业，请选择分析对象：")
+    # 选项列表
     options = company_portfolio['Property ID'].unique().tolist() + ["Whole"]
     
-    # 使用 segmented_control (Streamlit 新组件，外观更现代) 或 radio
-    view_mode = st.segmented_control(
-        "Select View:",
-        options,
-        default=prop_id,
-        key="view_selector"
-    )
-    st.write("---")
+    # 动态创建等宽列
+    cols = st.columns(len(options))
+    
+    # 在每一列里放一个按钮，模拟切换
+    # 注意：这里我们使用 st.button，点击后需要配合 st.session_state 记录状态
+    if "current_view" not in st.session_state:
+        st.session_state.current_view = prop_id
+
+    for i, opt in enumerate(options):
+        # 如果是当前选中的，样式可以稍微区别（这里用 type="primary"）
+        if cols[i].button(opt, use_container_width=True, 
+                          type="primary" if st.session_state.current_view == opt else "secondary"):
+            st.session_state.current_view = opt
+            st.rerun() # 点击后刷新页面以更新数据
+
+    view_mode = st.session_state.current_view
 
 if view_mode == "Whole":
     st.title(f"🏢 {current_company}")
