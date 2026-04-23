@@ -278,10 +278,22 @@ current_company = current_prop_row['Company']
 company_portfolio = final_df[final_df['Company'] == current_company].copy()
 other_props_count = len(company_portfolio)
 
-view_mode = "Single"
+view_mode = prop_id 
+
 if other_props_count > 1:
-    st.sidebar.info(f"💡 该公司旗下共有 {other_props_count} 个物业")
-    view_mode = st.sidebar.radio("分析视角:", ["Single", "Whole"], index=0)
+    st.write("---")
+    st.info(f"💡 该物业所属公司 **{current_company}** 旗下共有 {other_props_count} 个物业，请选择分析对象：")
+    options = company_portfolio['Property ID'].unique().tolist() + ["Whole"]
+    
+    # 使用 segmented_control (Streamlit 新组件，外观更现代) 或 radio
+    view_mode = st.radio(
+        "分析视角 (Select View):",
+        options,
+        index=options.index(prop_id), # 默认勾选你刚才选中的那个 ID
+        horizontal=True
+    )
+    st.write("---")
+
 if view_mode == "Whole":
     st.title(f"🏢 {current_company}")
     all_addresses = company_portfolio['Address'].unique().tolist()
@@ -385,7 +397,7 @@ if view_mode == "Whole":
     st.plotly_chart(fig_gauge, use_container_width=True)
     
 
-if view_mode == "Single":
+else:
     # 展示地址
     prop_data = current_prop_row.copy()
     st.markdown(f"### 📍 地址: {prop_data['Address']}")
