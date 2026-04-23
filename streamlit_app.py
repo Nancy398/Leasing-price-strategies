@@ -88,6 +88,7 @@ final_df = property_df.merge(cost_summary, on='Property ID', how='left') \
 
 final_df['Leased_Units'] = final_df['Leased_Units'].fillna(0)
 final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
+final_df['Total_fixed'] = final_df['Total_fixed']+final_df['Total Unit']*30
 
 final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
 final_df['Variable_Rate'] = final_df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
@@ -309,7 +310,7 @@ c1, c2 = st.columns(2)
 with c1:
     r_range = st.slider("Rent", 800, 2000, (800, 2000), step=50, key="prop_rent")
 with c2:
-    v_range = st.slider("Vacancy", 0, int(prop_data['Total Unit']), (0, 5), key="prop_vac")
+    v_range = st.slider("Vacancy", 0, int((prop_data['Total Unit']-prop_data['Leased_Units'])), (0, 5), key="prop_vac")
 
 # 生成矩阵 (传入只含该物业的 DataFrame)
 single_prop_df = final_df[final_df['Property ID'] == prop_id]
