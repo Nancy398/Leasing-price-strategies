@@ -320,7 +320,7 @@ if view_mode == "Whole":
     target_profit_pct = st.slider(
         "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
     )
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3,col4 = st.columns(4)
     
     with col1:
         st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
