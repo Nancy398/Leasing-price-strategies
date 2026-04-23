@@ -5,6 +5,27 @@ import numpy as np
 import plotly.graph_objects as go 
 import plotly.express as px
 
+# --- 样式注入：将 Slider 和其标题改为蓝色调 ---
+st.markdown("""
+    <style>
+    /* 1. 修改 Slider 标题 (Set Margin %) 的颜色 */
+    .stSlider label {
+        color: #1f77b4 !important;
+        font-weight: 600;
+    }
+    
+    /* 2. 修改 Slider 已滑动部分的轨道颜色 (蓝色) */
+    .stSlider [data-baseweb="slider"] div[style*="background-color: rgb(255, 75, 75)"] {
+        background-color: #1f77b4 !important;
+    }
+
+    /* 3. 修改 Slider 圆钮 (Thumb) 的背景和边框 */
+    .stSlider [data-baseweb="slider"] div[role="slider"] {
+        background-color: #1f77b4 !important;
+        border-color: #1f77b4 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
 APP_ID = st.secrets["Larksuite"]["APP_ID"]
