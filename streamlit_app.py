@@ -33,7 +33,7 @@ st.markdown(f"""
     }}
     /* 已滑动轨道颜色 */
     .stSlider [data-baseweb="slider"] div[style*="background-color"] {{
-        background-color: {DEEP_BLUE} !important;
+        background-color: {DEEP_BLUE} ;
     }}
     /* 圆钮颜色 */
     .stSlider [role="slider"] {{
