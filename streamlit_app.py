@@ -275,6 +275,7 @@ prop_data = final_df[final_df['Property ID'] == selected_id].iloc[0]
 st.dataframe(prop_data)
 current_company = prop_data['Company']
 company_portfolio = final_df[final_df['Company'] == current_company]
+st.dataframe(company_portfolio)
 other_props_count = len(company_portfolio)
 # 初始化视角
 view_mode = "Single Property"
