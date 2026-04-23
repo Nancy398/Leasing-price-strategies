@@ -371,6 +371,6 @@ noi_matrix = generate_dynamic_noi_matrix(single_prop_df, rent_levels, vac_levels
 
 # 展示矩阵
 st.dataframe(
-    noi_matrix.style.background_gradient(cmap='RdYlGn', axis=None).format("${:,.0f}"),
+    noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
     use_container_width=True
 )
