@@ -233,7 +233,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
 
     matrix_data = []
     for rent in rent_levels:
-        row = {"租金水平": f"${rent}"}
+        row = {"Rent": f"${rent}"}
         for vac in vac_levels:
             # 模拟逻辑
             new_leased = max(max_available - vac, 0)
@@ -247,7 +247,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
             row[f"{vac}"] = noi
         matrix_data.append(row)
     
-    return pd.DataFrame(matrix_data).set_index("租金水平/空置数")
+    return pd.DataFrame(matrix_data).set_index("租金水平")
 
 
 ##----SHOW-----
