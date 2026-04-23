@@ -281,7 +281,6 @@ other_props_count = len(company_portfolio)
 view_mode = prop_id 
 
 if other_props_count > 1:
-    st.write("---")
     # 选项列表
     options = company_portfolio['Property ID'].unique().tolist() + ["Whole"]
     
