@@ -316,7 +316,7 @@ if view_mode == "Whole":
     prop_data['Current_Avg_Leased'] = (
         prop_data['Already_Leased_Rev'] / prop_data['Leased_Units']
     ).fillna(0)
-        target_profit_pct = st.slider(
+    target_profit_pct = st.slider(
         "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
     )
     col1, col2, col3 = st.columns(3)
