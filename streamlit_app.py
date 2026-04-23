@@ -100,7 +100,7 @@ final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
 def set_mgmt_rate(prop_type):
     if prop_type == "MH":
         return 0.12
-    elif prop_type == "Master Lease":
+    elif prop_type == "ML":
         return 0.02
     else:
         return 0.0
@@ -138,7 +138,7 @@ def calculate_target_price(df, profit_margin):
     def get_mgmt_rate(row):
         if row['Type'] == "MH":
             return 0.12
-        elif row['Type'] == "Master Lease":
+        elif row['Type'] == "ML":
             return 0.02
         else:
             return 0.0
@@ -210,7 +210,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     def get_matrix_mgmt_rate(prop_type):
         if prop_type == "MH":
             return 0.12
-        elif prop_type == "Master Lease":
+        elif prop_type == "ML":
             return 0.02
         else:
             return 0.0
