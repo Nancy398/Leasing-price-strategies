@@ -8,21 +8,30 @@ import plotly.express as px
 # --- 样式注入：将 Slider 和其标题改为蓝色调 ---
 st.markdown("""
     <style>
-    /* 1. 修改 Slider 标题 (Set Margin %) 的颜色 */
-    .stSlider label {
+    /* 1. 强制修改 Metric 数字的颜色（默认是红色/绿色/黑色） */
+    [data-testid="stMetricValue"] {
         color: #1f77b4 !important;
-        font-weight: 600;
     }
     
-    /* 2. 修改 Slider 已滑动部分的轨道颜色 (蓝色) */
-    .stSlider [data-baseweb="slider"] div[style*="background-color: rgb(255, 75, 75)"] {
-        background-color: #1f77b4 !important;
+    /* 2. 强制修改 Slider 标题颜色 */
+    .stSlider label {
+        color: #1f77b4 !important;
     }
 
-    /* 3. 修改 Slider 圆钮 (Thumb) 的背景和边框 */
-    .stSlider [data-baseweb="slider"] div[role="slider"] {
+    /* 3. 强制修改 Slider 轨道（针对新版 Streamlit 结构） */
+    .stSlider [data-baseweb="slider"] > div > div {
+        background: #1f77b4 !important;
+    }
+
+    /* 4. 强制修改 Slider 圆钮颜色 */
+    .stSlider [role="slider"] {
         background-color: #1f77b4 !important;
-        border-color: #1f77b4 !important;
+        border: 2px solid #1f77b4 !important;
+    }
+
+    /* 5. 修改所有 Header 标题颜色 */
+    h1, h2, h3 {
+        color: #1f77b4 !important;
     }
     </style>
     """, unsafe_allow_html=True)
