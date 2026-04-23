@@ -124,8 +124,8 @@ final_df = property_df.merge(cost_summary, on='Property ID', how='left') \
 final_df['Leased_Units'] = final_df['Leased_Units'].fillna(0)
 final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
 final_df['Total_Fixed'] = final_df['Total_Fixed']+final_df['Total Unit']*30
-
 final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
+final_df['Total_Commission'] = final_df['Total Unit'] * 50
 
 def calculate(df):
     def set_mgmt_rate(prop_type):
@@ -138,8 +138,6 @@ def calculate(df):
     
     df['Variable_Rate'] = df['Type'].apply(set_mgmt_rate)
     df['Denominator'] = 1 - df['Variable_Rate']
-    
-    df['Total_Commission'] = df['Total Unit'] * 50
     df['Total_Required_Costs'] = df['Total_Fixed'] + df['Total_Commission']
     
     df['Required_Total_Rev'] = df['Total_Required_Costs'] / df['Denominator']
