@@ -11,6 +11,7 @@ APP_ID = st.secrets["Larksuite"]["APP_ID"]
 APP_SECRET = st.secrets["Larksuite"]["APP_SECRET"]
 APP_TOKEN = "Bu3QbY095aE5H1sdXtvjoRG4pjb"
 TABLE_ID = "tbldXd7TSURHd0sI"
+TABLE_ID_1 = "tblJ1I75LphH4suv"
 
 # 2. 获取访问令牌 Tenant Access Token
 # @st.cache_data(ttl=7000) # 缓存 token，避免频繁请求
@@ -21,7 +22,7 @@ def get_tenant_access_token():
     return r.json().get("tenant_access_token")
 
 
-def fetch_bitable_data():
+def fetch_bitable_data(TABLE_ID):
     token = get_tenant_access_token()
 
     if not token:
@@ -51,14 +52,38 @@ def fetch_bitable_data():
         return pd.DataFrame()
         
 leases_df = pd.read_csv("Leases.csv")
-lark_df = fetch_bitable_data() 
+lark_df_USC = fetch_bitable_data(TABLE_ID) 
+lark_df_UCLA = fetch_bitable_data(TABLE_ID_1)
+
+lark_df_UCLA = lark_df_UCLA[[
+    "Unit - Room Number",
+    "Rental Price",
+    "Lease Status"
+]].copy()
+
+lark_df_UCLA["Monthly Concession"] = 0
+
+lark_df_USC = lark_df_USC[[
+    'Room Number',
+    'Real Price',
+    'Lease Status',
+    'Monthly Concession'
+]].copy()
+lark_df_UCLA = lark_df_UCLA[[
+    'Room Number',
+    'Real Price',
+    'Monthly Concession',
+    'Lease Status'
+]].copy()
+
+lark_df = pd.concat([lark_df_USC, lark_df_UCLA], ignore_index=True)
 
 leases_df['Room Number'] = leases_df['Room Number'].astype(str).str.strip()
 lark_df['Room Number'] = lark_df['Room Number'].astype(str).str.strip()
 
 merged_df = pd.merge(
     leases_df, 
-    lark_df[['Room Number', 'Real Price', 'Monthly Concession', 'Lease Status']], 
+    lark_df[['Room Number', 'Real Price','Lease Status', 'Monthly Concession']], 
     on='Room Number', 
     how='left'
 )
