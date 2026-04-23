@@ -281,6 +281,7 @@ other_props_count = len(company_portfolio)
 view_mode = prop_id 
 
 if other_props_count > 1:
+    st.markdown(f"###(f"🏢 {current_company}"")
     # 选项列表
     options = company_portfolio['Property ID'].unique().tolist() + ["Whole"]
     
@@ -302,10 +303,9 @@ if other_props_count > 1:
     view_mode = st.session_state.current_view
 
 if view_mode == "Whole":
-    st.title(f"🏢 {current_company}")
     all_addresses = company_portfolio['Address'].unique().tolist()
     address_display = " | ".join([f"{addr}" if addr == current_prop_row['Address'] else addr for addr in all_addresses])
-    st.info(f"📍 地址: {address_display}")
+    st.markdown(f"📍 地址: {address_display}")
     agg_dict = {
         'Company': current_company,
         'Type': company_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
