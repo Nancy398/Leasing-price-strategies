@@ -287,7 +287,6 @@ if other_props_count > 1:
     )
     
 if view_mode == "Single":
-    st.title(f"🏠 {prop_data['Property Name']} ({selected_id})")
     
         # 展示地址
     st.markdown(f"### 📍 地址: {prop_data['Address']}")
