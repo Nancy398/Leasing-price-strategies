@@ -267,155 +267,224 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     return pd.DataFrame(matrix_data).set_index("Rent")
 st.dataframe(final_df)
 ##----SHOW-----
-##---- 数据处理逻辑保持你原有的部分不变，直到 SHOW 之前 ----
-
-##---- SHOW (重构后的展示部分) -----
 st.title("PROPERTY LEASING STRATEGY")
 
-# 1. 侧边栏基础筛选：先选 ID
 all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
-selected_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
+prop_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
 
-# 获取选中物业的原始数据
-current_prop_row = final_df[final_df['Property ID'] == selected_id].iloc[0]
+# 获取当前物业的基础数据
+current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
 current_company = current_prop_row['Company']
 
-# 筛选该公司旗下所有物业 (用于 Whole 模式)
+# 获取同公司组合
 company_portfolio = final_df[final_df['Company'] == current_company].copy()
 other_props_count = len(company_portfolio)
 
-# 2. 视角切换逻辑
-view_mode = "Single" 
+view_mode = "Single"
 if other_props_count > 1:
     st.sidebar.info(f"💡 该公司旗下共有 {other_props_count} 个物业")
-    view_mode = st.sidebar.radio("切换分析视角:", ["Single", "Whole"], index=0)
-
-# --- 核心数据适配层 ---
+    view_mode = st.sidebar.radio("分析视角:", ["Single", "Whole"], index=0)
 if view_mode == "Whole":
-    st.subheader(f"🏢 {current_company} - 投资组合全景汇总")
-    
-    # 汇总地址显示
+    st.title(f"🏢 {current_company}")
     all_addresses = company_portfolio['Address'].unique().tolist()
-    address_display = " | ".join([f"**{addr}**" if addr == current_prop_row['Address'] else addr for addr in all_addresses])
-    st.info(f"📍 关联地址: {address_display}")
-
-    # 构造聚合后的 prop_data (将所有物业看作一个整体)
+    address_display = " | ".join([f"{addr}" if addr == current_prop_row['Address'] else addr for addr in all_addresses])
+    st.info(f"📍 地址: {address_display}")
     agg_dict = {
+        'Company': current_company,
+        'Type': company_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
         'Total Unit': company_portfolio['Total Unit'].sum(),
         'Total_Fixed': company_portfolio['Total_Fixed'].sum(),
         'Leased_Units': company_portfolio['Leased_Units'].sum(),
         'Already_Leased_Rev': company_portfolio['Already_Leased_Rev'].sum(),
         'Vacant_Units': company_portfolio['Vacant_Units'].sum(),
-        'Type': company_portfolio['Type'].iloc[0], # 费率基准取第一个
-        'Variable_Rate': current_prop_row['Variable_Rate'],
-        'Denominator': current_prop_row['Denominator']
+        'Total_Commission': company_portfolio['Total Unit'].sum() * 50
+        
     }
     prop_data = pd.Series(agg_dict)
-    # 用于矩阵计算的 DataFrame 也是全组合
-    matrix_df = company_portfolio
-else:
-    # Single 模式：直接使用选中的行
-    st.markdown(f"📍 地址: **{current_prop_row['Address']}**")
-    st.write(f"物业类型: {current_prop_row['Type']} | 公司: {current_prop_row['Company']}")
+    prop_data['Variable_Rate'] = 0.12 if prop_data['Type'] == "MH" else (0.02 if prop_data['Type'] == "ML" else 0.0)
+    prop_data['Denominator'] = 1 - prop_data['Variable_Rate']
+    prop_data['Occupancy %'] = prop_data['Leased_Units'] / prop_data['Total Unit'] if prop_data['Total Unit'] > 0 else 0
+    prop_data['Total_Required_Costs'] = prop_data['Total_Fixed'] + prop_data['Total_Commission']
+    prop_data['Required_Total_Rev'] = prop_data['Total_Required_Costs'] / prop_data['Denominator']
+    prop_data['Gap_To_Fill'] = prop_data['Required_Total_Rev'] - prop_data['Already_Leased_Rev']
+    prop_data['Breakeven_Rent'] = np.where(
+        prop_data['Vacant_Units'] <= 0,
+        0,
+        prop_data['Gap_To_Fill'] / prop_data['Vacant_Units']
+    )
+# Current Average Leased
+    prop_data['Current_Avg_Leased'] = (
+        prop_data['Already_Leased_Rev'] / prop_data['Leased_Units']
+    ).fillna(0)
+        target_profit_pct = st.slider(
+        "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
+    )
+    col1, col2, col3 = st.columns(3)
     
-    prop_data = current_prop_row
-    # 用于矩阵计算的 DataFrame 仅当前物业
-    matrix_df = final_df[final_df['Property ID'] == selected_id]
-
-# --- 3. 关键指标卡片 (无论哪种视角，计算逻辑复用) ---
-st.write("---")
-target_profit_pct = st.slider(
-    "Set Target Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
-)
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
-
-with col2:
-    # 重新计算该视角下的保本租金
-    # Gap = (FixedCosts + Commission) / Denominator - AlreadyLeasedRev
-    total_commission = prop_data['Total Unit'] * 50
-    req_rev_be = (prop_data['Total_Fixed'] + total_commission) / prop_data['Denominator']
-    be_rent = (req_rev_be - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units'] if prop_data['Vacant_Units'] > 0 else 0
-    st.metric("保本租金 (Breakeven)", f"${max(0, be_rent):,.2f}")
-
-with col3:
-    # 预计当前总 NOI
-    current_noi = (prop_data['Already_Leased_Rev'] * prop_data['Denominator']) - (prop_data['Leased_Units'] * 50) - prop_data['Total_Fixed']
-    st.metric("预计总 NOI (Current)", f"${current_noi:,.0f}")
-
-with col4:    
-    # 计算目标租金
-    target_margin = target_profit_pct / 100
-    denom_with_margin = 1 - prop_data['Variable_Rate'] - target_margin
+    with col1:
+        st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
     
-    if denom_with_margin > 0 and prop_data['Vacant_Units'] > 0:
-        total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
-        req_rev_target = total_req_costs / denom_with_margin
-        target_price = (req_rev_target - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
-        st.metric("目标租金 (Target)", f"${max(0, target_price):,.2f}")
-    else:
-        st.metric("目标租金 (Target)", "N/A")
-
-# --- 4. 出租率仪表盘 ---
-st.write("---")
-# 计算当前视角的总出租率
-total_occ_rate = (prop_data['Leased_Units'] / prop_data['Total Unit'] * 100) if prop_data['Total Unit'] > 0 else 0
-
-fig_gauge = go.Figure(go.Indicator(
-    mode = "gauge+number",
-    value = total_occ_rate,
-    number = {'suffix': "%", 'font': {'color': "#1f77b4"}},
-    title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
-    domain = {'x': [0, 1], 'y': [0, 1]},
-    gauge = {
-        'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
-        'bar': {'color': "#003f5c"},
-        'bgcolor': "white",
-        'borderwidth': 1,
-        'bordercolor': "#e0e0e0",
-        'steps': [
-            {'range': [0, 70], 'color': "#f0f4f8"},
-            {'range': [70, 90], 'color': "#d1e3f0"},
-            {'range': [90, 100], 'color': "#a3c1da"}
-        ],
-        'threshold': {
-            'line': {'color': "#ff4b4b", 'width': 3},
-            'thickness': 0.75,
-            'value': 95}
-    }
-))
-fig_gauge.update_layout(height=300, margin=dict(l=30, r=30, t=50, b=20), paper_bgcolor = "rgba(0,0,0,0)")
-st.plotly_chart(fig_gauge, use_container_width=True)
-
-# --- 5. 敏感性分析矩阵 ---
-st.write("---")
-st.subheader("Sensitivity Analysis (NOI)")
-
-c1, c2 = st.columns(2)
-with c1:
-    r_range = st.slider("Rent Level", 400, 3000, (800, 2000), step=50, key="matrix_rent")
-with c2:
-    # 动态调整空置模拟范围，上限为当前视角下的总房间数
-    max_vac_limit = int(prop_data['Total Unit'])
-    v_range = st.slider("Vacancy Level", 0, max_vac_limit, (0, min(10, max_vac_limit)), key="matrix_vac")
-
-rent_levels = np.arange(r_range[0], r_range[1] + 50, 100)
-vac_levels = list(range(v_range[0], v_range[1] + 1))
-
-# 这里传入 matrix_df，如果是 Whole 模式，它会计算该公司下所有物业的 NOI 模拟
-noi_matrix = generate_dynamic_noi_matrix(matrix_df, rent_levels, vac_levels)
-
-st.dataframe(
-    noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
-    use_container_width=True
-)
-
-# 如果是 Whole 模式，最后加一个简单的物业对比清单
-if view_mode == "Whole":
+    with col2:
+        st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:.2f}")
+    
+    with col3:
+        # 这里的 Est_NOI 可以是当前状态下的 NOI
+        # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
+        st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
+    
+    with col4:    
+        # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
+        target_margin = target_profit_pct / 100
+        denominator = 1 - prop_data['Variable_Rate'] - target_margin
+        
+        if denominator > 0 and prop_data['Vacant_Units'] > 0:
+            total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
+            req_rev = total_req_costs / denominator
+            target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
+        else:
+            target_price = 0  # 或者显示 np.nan
+        
+        # C. 最后渲染数字卡片
+        # 这样它显示的就是刚刚算好的最新 target_price
+        st.metric("目标租金 (Target)", f"${target_price:,.2f}")
+    
+    # --- 3. 出租率仪表盘 ---
+    # --- 3. 出租率仪表盘 (蓝色调版) ---
     st.write("---")
-    st.subheader("Property Comparison Inside Portfolio")
-    comparison_df = company_portfolio[['Property ID', 'Occupancy %', 'Est_NOI']]
-    st.dataframe(comparison_df.style.format({'Occupancy %': '{:.1%}', 'Est_NOI': '${:,.0f}'}), use_container_width=True)
+    occ_rate = float(prop_data['Occupancy %']) * 100
+    
+    fig_gauge = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = occ_rate,
+        number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
+        title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        gauge = {
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
+            'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
+            'bgcolor': "white",
+            'borderwidth': 1,
+            'bordercolor': "#e0e0e0",
+            'steps': [
+                {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
+                {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
+                {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
+            ],
+            'threshold': {
+                'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
+                'thickness': 0.75,
+                'value': 95}
+        }
+    ))
+    
+    fig_gauge.update_layout(
+        height=300, 
+        margin=dict(l=30, r=30, t=50, b=20),
+        paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+    )
+    
+    st.plotly_chart(fig_gauge, use_container_width=True)
+    
+
+if view_mode == "Single":
+    # 展示地址
+    prop_data = current_prop_row.copy()
+    st.markdown(f"### [Sticker] 地址: {prop_data['Address']}")
+    st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
+    
+    # --- 2. 关键指标卡片 ---
+    target_profit_pct = st.slider(
+        "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
+    )
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+    
+    with col2:
+        st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:.2f}")
+    
+    with col3:
+        # 这里的 Est_NOI 可以是当前状态下的 NOI
+        # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
+        st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
+    
+    with col4:    
+        # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
+        target_margin = target_profit_pct / 100
+        denominator = 1 - prop_data['Variable_Rate'] - target_margin
+        
+        if denominator > 0 and prop_data['Vacant_Units'] > 0:
+            total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
+            req_rev = total_req_costs / denominator
+            target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
+        else:
+            target_price = 0  # 或者显示 np.nan
+        
+        # C. 最后渲染数字卡片
+        # 这样它显示的就是刚刚算好的最新 target_price
+        st.metric("目标租金 (Target)", f"${target_price:,.2f}")
+    
+    # --- 3. 出租率仪表盘 ---
+    # --- 3. 出租率仪表盘 (蓝色调版) ---
+    st.write("---")
+    occ_rate = float(prop_data['Occupancy %']) * 100
+    
+    fig_gauge = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = occ_rate,
+        number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
+        title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        gauge = {
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
+            'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
+            'bgcolor': "white",
+            'borderwidth': 1,
+            'bordercolor': "#e0e0e0",
+            'steps': [
+                {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
+                {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
+                {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
+            ],
+            'threshold': {
+                'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
+                'thickness': 0.75,
+                'value': 95}
+        }
+    ))
+    
+    fig_gauge.update_layout(
+        height=300, 
+        margin=dict(l=30, r=30, t=50, b=20),
+        paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+    )
+    
+    st.plotly_chart(fig_gauge, use_container_width=True)
+    
+    
+    
+    # --- 4. 敏感性分析矩阵 ---
+    st.write("---")
+    st.subheader("Sensitivity Analysis")
+    
+    # 局部滑轨控制矩阵范围
+    c1, c2 = st.columns(2)
+    with c1:
+        r_range = st.slider("Rent", 400, 2000, (800, 2000), step=50, key="prop_rent")
+    with c2:
+        v_range = st.slider("Vacancy", 0, int((prop_data['Total Unit']-prop_data['Leased_Units'])), (0, 5), key="prop_vac")
+    
+    # 生成矩阵 (传入只含该物业的 DataFrame)
+    single_prop_df = final_df[final_df['Property ID'] == prop_id]
+    rent_levels = np.arange(r_range[0], r_range[1] + 50, 100)
+    vac_levels = list(range(v_range[0], v_range[1] + 1))
+    
+    noi_matrix = generate_dynamic_noi_matrix(single_prop_df, rent_levels, vac_levels)
+    
+    # 展示矩阵
+    st.dataframe(
+        noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
+        use_container_width=True
+    )
+
