@@ -195,7 +195,7 @@ final_df['Est_NOI'] = (
     (final_df['Already_Leased_Rev'] * final_df['Variable_Rate'])
 )
 
-st.dataframe(final_df)
+# st.dataframe(final_df)
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     # 1. 基础静态数据（这些是基于当前现状，不会随矩阵模拟改变）
     total_units = df['Total Unit'].sum()
