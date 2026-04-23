@@ -273,9 +273,10 @@ all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
 selected_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
 prop_data = final_df[final_df['Property ID'] == selected_id].iloc[0]
 current_company = prop_data['Company']
-print(current_company)
+st.write(current_company)
 company_portfolio = final_df[final_df['Company'] == current_company]
 st.dataframe(company_portfolio)
+st.write(company_portfolio[['Property ID', 'Property Name']])
 other_props_count = len(company_portfolio)
 # 初始化视角
 view_mode = "Single Property"
