@@ -196,31 +196,31 @@ final_df['Est_NOI'] = final_df['Already_Leased_Rev']-final_df['Total_Fixed']-fin
 #     }
 # )
 
-##----Sensitivity Analysis-----
-st.header("NOI 敏感性模拟器")
+# ##----Sensitivity Analysis-----
+# st.header("NOI 敏感性模拟器")
 
-# --- 装置 1: 选择租金范围 ---
-# 使用 select_slider 或 slider 的范围模式 (value 传入元组)
-rent_min, rent_max = st.slider(
-    "选择模拟租金范围 ($)",
-    min_value=800,
-    max_value=2000,
-    value=(800, 1500), # 默认范围
-    step=50
-)
+# # --- 装置 1: 选择租金范围 ---
+# # 使用 select_slider 或 slider 的范围模式 (value 传入元组)
+# rent_min, rent_max = st.slider(
+#     "选择模拟租金范围 ($)",
+#     min_value=800,
+#     max_value=2000,
+#     value=(800, 1500), # 默认范围
+#     step=50
+# )
 
-# --- 装置 2: 选择空置数范围 ---
-vac_min, vac_max = st.slider(
-    "选择模拟空置房数范围",
-    min_value=0,
-    max_value=30, # 建议设为总房间数的最大值
-    value=(0, 10), # 默认显示 0 到 10 个空置
-    step=1
-)
+# # --- 装置 2: 选择空置数范围 ---
+# vac_min, vac_max = st.slider(
+#     "选择模拟空置房数范围",
+#     min_value=0,
+#     max_value=30, # 建议设为总房间数的最大值
+#     value=(0, 10), # 默认显示 0 到 10 个空置
+#     step=1
+# )
 
-# 生成动态的范围数组
-rent_levels = np.arange(rent_min, rent_max + 50, 100) # 每 100 一个档位
-vac_levels = list(range(vac_min, vac_max + 1))
+# # 生成动态的范围数组
+# rent_levels = np.arange(rent_min, rent_max + 50, 100) # 每 100 一个档位
+# vac_levels = list(range(vac_min, vac_max + 1))
 
 def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     total_units = df['Total Unit'].sum()
