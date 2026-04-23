@@ -17,28 +17,27 @@ st.markdown(f"""
     font-weight: 600;
 }}
 
-/* ✅ 已滑动部分（关键修复） */
-.stSlider [data-baseweb="slider"] div[data-testid="stTickBarMin"] {{
+/* ✅ 整条轨道（灰色底） */
+.stSlider [data-baseweb="slider"] > div {{
+    background-color: #ddd !important;
+    height: 4px !important;
+}}
+
+/* ✅ 已滑动部分（蓝色） */
+.stSlider [data-baseweb="slider"] > div > div {{
     background-color: {DEEP_BLUE} !important;
 }}
 
-/* ✅ 未滑动部分（灰色） */
-.stSlider [data-baseweb="slider"] div[data-testid="stTickBarMax"] {{
-    background-color: #a3c1da !important;
-}}
-
-/* ✅ 圆点（handle） */
+/* ✅ 圆点 */
 .stSlider [role="slider"] {{
     background-color: {DEEP_BLUE} !important;
     border: 2px solid {DEEP_BLUE} !important;
 }}
 
-/* ❌ 不要再全局覆盖 div > div（就是你之前的问题） */
-
-/* ✅ 数字标签（恢复正常样式） */
-.stSlider div {{
-    color: inherit !important;
+/* ✅ 修复数字变按钮问题（关键） */
+.stSlider span {{
     background: transparent !important;
+    color: inherit !important;
 }}
 
 </style>
