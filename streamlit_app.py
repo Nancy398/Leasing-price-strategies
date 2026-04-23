@@ -308,8 +308,9 @@ if view_mode == "Whole":
 
 else:
     # --- Single 视角 ---
-    st.title(f"🏠 {current_prop_row['Property Name']} ({prop_id})")
-    st.markdown(f"### 📍 地址: {current_prop_row['Address']}")
+    st.markdown(f"### [Sticker] 地址: {current_prop_row['Address']}")
+    st.write(f"物业类型: {current_prop_row['Type']} | 公司: {current_prop_row['Company']}")
+
     
     # 运行一次计算逻辑填充字段
     # 注意：为了不报错，我们将这一行转成 DataFrame 算完再拿出来
