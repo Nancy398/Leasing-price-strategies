@@ -291,6 +291,7 @@ if view_mode == "Whole":
         'Vacant_Units': company_portfolio['Vacant_Units'].sum(),
         'Total_Commission': company_portfolio['Total_Commission'].sum()
     }
+    st.dataframe(prop_data)
     prop_data = calculation(prop_data)
     st.dataframe(prop_data)
         # --- 2. 关键指标卡片 ---
@@ -388,6 +389,7 @@ if view_mode == "Whole":
     )
     
 else:    # 展示地址
+    prop_data = calculate(final_df)
     st.markdown(f"### 📍 地址: {prop_data['Address']}")
     st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
         
