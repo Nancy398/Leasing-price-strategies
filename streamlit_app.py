@@ -268,7 +268,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
 st.title("PROPERTY LEASING STRATEGY")
 
 all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
-prop_id = st.sidebar.selectbox("Select Property ID", all_prop_ids)
+selected_id = st.selectbox("Select property", all_prop_ids)
 
 # 获取当前物业的基础数据
 current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
@@ -286,11 +286,11 @@ if other_props_count > 1:
     options = company_portfolio['Property ID'].unique().tolist() + ["Whole"]
     
     # 使用 segmented_control (Streamlit 新组件，外观更现代) 或 radio
-    view_mode = st.radio(
-        "分析视角 (Select View):",
+    view_mode = st.segmented_control(
+        "Select View:",
         options,
-        index=options.index(prop_id), # 默认勾选你刚才选中的那个 ID
-        horizontal=True
+        default=prop_id,
+        key="view_selector"
     )
     st.write("---")
 
