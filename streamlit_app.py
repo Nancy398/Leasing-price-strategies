@@ -88,7 +88,7 @@ final_df = property_df.merge(cost_summary, on='Property ID', how='left') \
 
 final_df['Leased_Units'] = final_df['Leased_Units'].fillna(0)
 final_df['Already_Leased_Rev'] = final_df['Already_Leased_Rev'].fillna(0)
-final_df['Total_fixed'] = final_df['Total_fixed']+final_df['Total Unit']*30
+final_df['Total_Fixed'] = final_df['Total_Fixed']+final_df['Total Unit']*30
 
 final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
 final_df['Variable_Rate'] = final_df['Type'].apply(lambda x: 0.12 if x == "MH" else 0.0)
