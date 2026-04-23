@@ -207,13 +207,13 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     other_fixed_cost = total_fixed_base_cost
     
     # # 2. 确定管理费率 (如果是 MH 类型则为 12%)
-    # def get_matrix_mgmt_rate(prop_type):
-    #     if prop_type == "MH":
-    #         return 0.12
-    #     elif prop_type == "ML":
-    #         return 0.02
-    #     else:
-    #         return 0.0
+    def get_matrix_mgmt_rate(prop_type):
+        if prop_type == "MH":
+            return 0.12
+        elif prop_type == "ML":
+            return 0.02
+        else:
+            return 0.0
 
     # 兼容处理：如果是 Series 拿第一个值，如果是字符串直接用
     p_type = df['Type'].iloc[0] if isinstance(df['Type'], pd.Series) else df['Type']
