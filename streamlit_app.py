@@ -638,3 +638,24 @@ else:
         use_container_width=True
     )
 
+# --- 底部版权标 (Footer) ---
+st.markdown("""
+    <style>
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: transparent;
+        color: #a3a3a3;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+        letter-spacing: 1px;
+    }
+    </style>
+    <div class="footer">
+        <p>© 2026 Moo Housing. All Rights Reserved.</p>
+    </div>
+""", unsafe_allow_html=True)
+
