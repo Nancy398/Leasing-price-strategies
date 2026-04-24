@@ -595,8 +595,9 @@ else:
             six_months_ago = latest_month - pd.DateOffset(months=5)
             history_data = prop_history[prop_history['Month'] >= six_months_ago]
             
-            fixed_cost = current_prop_row['Total_Fixed']
-            target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3)
+            fixed_cost = prop_data['Total_Fixed']
+            # 假设你的 target 租金在某列，或者根据业务逻辑设定（例如固定成本的 1.3 倍）
+            target_rent = prop_data['Total_Fixed']/(1-target_profit_pct/100)
     
     
             # --- 2. 在图表下方设置开关选项 ---
@@ -610,7 +611,7 @@ else:
             with ctrl_col1:
                 show_fixed = st.checkbox("🚩 Show Total Cost", value=True)
             with ctrl_col2:
-                show_target = st.checkbox("🎯 Show Target", value=True)
+                show_target = st.checkbox("🎯 Show Target", value=False)
 
             chart_container = st.container()
     
