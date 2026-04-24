@@ -170,7 +170,6 @@ final_df['Occupancy %'] = (
 
 
 def calculate_target_price(df, profit_margin):
-    
     # --- 2. 成本汇总 ---
     # TotalCommission = Total Unit * 50
     df['Total_Commission'] = df['Total Unit'] * 50
@@ -388,7 +387,6 @@ if view_mode == "Whole":
     target_profit_pct = st.slider(
         "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
     )
-    st.write(target_profit_pct)
     col1, col2, col3,col4 = st.columns(4)
     
     with col1:
@@ -576,7 +574,7 @@ else:
         with col2:
             st.metric("总成本（Total Cost）", f"${int(prop_data['Total_Fixed']):,.2f}")
         with col3:
-            st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']*1+target_profit_pct):,.2f}")
+            st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100):,.2f}")
     else:
         col1, col2, col3, col4 = st.columns(4)
         
