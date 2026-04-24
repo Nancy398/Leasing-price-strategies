@@ -270,37 +270,55 @@ st.title("PROPERTY LEASING STRATEGY")
 all_prop_ids = sorted(final_df['Property ID'].unique().tolist())
 prop_id = st.selectbox("Select property", all_prop_ids)
 
-# 获取当前物业的基础数据
+# --- 1. 基础数据准备 ---
 current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
 current_company = current_prop_row['Company']
+current_type = current_prop_row['Type']
 
 # 获取同公司组合
 company_portfolio = final_df[final_df['Company'] == current_company].copy()
-other_props_count = len(company_portfolio)
+# 获取全平台 ML 组合
+ml_portfolio = final_df[final_df['Type'] == "ML"].copy()
 
-view_mode = prop_id 
+# --- 2. 动态构建选项按钮列表 ---
+# 初始选项：只有当前选中的 ID
+options = [prop_id]
 
-if other_props_count > 1:
-    st.markdown(f"### 🏢 {current_company}")
-    # 选项列表
-    options = company_portfolio['Property ID'].unique().tolist() + ["Whole"]
-    
-    # 动态创建等宽列
-    cols = st.columns(len(options))
-    
-    # 在每一列里放一个按钮，模拟切换
-    # 注意：这里我们使用 st.button，点击后需要配合 st.session_state 记录状态
-    if "current_view" not in st.session_state:
-        st.session_state.current_view = prop_id
+# 逻辑 A：如果有同公司其他物业，增加 "Whole"
+if len(company_portfolio) > 1:
+    options.append("Whole")
 
-    for i, opt in enumerate(options):
-        # 如果是当前选中的，样式可以稍微区别（这里用 type="primary"）
-        if cols[i].button(opt, use_container_width=True, 
-                          type="primary" if st.session_state.current_view == opt else "secondary"):
-            st.session_state.current_view = opt
-            st.rerun() # 点击后刷新页面以更新数据
+# 逻辑 B：如果当前物业是 ML，且全平台有其他 ML 物业，增加 "ML Overall"
+if current_type == "ML" and len(ml_portfolio) > 1:
+    options.append("ML Overall")
 
-    view_mode = st.session_state.current_view
+# --- 3. 渲染按钮组 ---
+st.markdown(f"### 🏢 {current_company}")
+
+# 初始化或检查 session_state
+if "current_view" not in st.session_state:
+    st.session_state.current_view = prop_id
+
+# 重要：如果用户切换了下拉框的 prop_id，而旧的 view_mode 已经不适用新选项了，强制重置
+if st.session_state.current_view not in options:
+    st.session_state.current_view = prop_id
+
+# 动态列：让按钮平铺
+cols = st.columns(len(options))
+
+for i, opt in enumerate(options):
+    # 定义按钮显示的名称
+    label = opt
+    if opt == prop_id: label = f"🏠 {opt}"
+    elif opt == "Whole": label = "🏢 Whole Company"
+    elif opt == "ML Overall": label = "📊 ML Overall"
+
+    if cols[i].button(label, use_container_width=True, 
+                      type="primary" if st.session_state.current_view == opt else "secondary"):
+        st.session_state.current_view = opt
+        st.rerun()
+
+view_mode = st.session_state.current_view
 
 
 if view_mode == "Whole":
