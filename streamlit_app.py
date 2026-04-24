@@ -274,19 +274,21 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
 ##----SHOW-----
 st.title("PROPERTY LEASING STRATEGY")
 
-sorted_df = final_df.sort_values(by=['Type', 'Property ID'])
+col_type, col_prop = st.columns([1, 3])
 
-# 生成类似 "[ML] ID101" 的标签列表
-display_options = [f"[{row['Type']}] {row['Property ID']}" for _, row in sorted_df.iterrows()]
+with col_type:
+    # 左侧选择类型
+    unique_types = sorted(final_df['Type'].unique().tolist())
+    selected_type = st.selectbox("Type", unique_types)
 
-# --- 2. 展示分类下拉框 ---
-selected_label = st.selectbox("Select Property", display_options)
+with col_prop:
+    # 右侧根据左侧的选择，过滤出对应的 Property ID
+    filtered_ids = sorted(
+        final_df[final_df['Type'] == selected_type]['Property ID'].unique().tolist()
+    )
+    prop_id = st.selectbox("Select Property", filtered_ids)
 
-# --- 3. 解析回原始的 prop_id ---
-# 提取方括号后面的 ID 部分
-prop_id = selected_label.split("] ")[1]
-
-# --- 4. 基础数据准备 (保持不变) ---
+# --- 2. 基础数据准备 (与之前一致) ---
 current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
 current_company = current_prop_row['Company']
 current_type = current_prop_row['Type']
