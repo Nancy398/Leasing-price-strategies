@@ -293,7 +293,6 @@ if current_type == "ML" and len(ml_portfolio) > 1:
     options.append("ML Overall")
 
 # --- 3. 渲染按钮组 ---
-st.markdown(f"### 🏢 {current_company} Portfolio")
 
 # 初始化 session_state
 if "current_view" not in st.session_state:
@@ -328,6 +327,7 @@ for i, opt in enumerate(options):
 view_mode = st.session_state.current_view
 
 if view_mode == "Whole":
+    st.markdown(f"### 🏢 {current_company} ")
     all_addresses = company_portfolio['Address'].unique().tolist()
     address_display = " | ".join([f"{addr}" if addr == current_prop_row['Address'] else addr for addr in all_addresses])
     st.markdown(f"#### 📍 地址: {address_display}")
@@ -429,6 +429,7 @@ if view_mode == "Whole":
     st.plotly_chart(fig_gauge, use_container_width=True)
 
 elif view_mode == "ML Overall":
+    st.markdown(f"### 🏢 All Master Lease ")
     agg_dict = {
         'Type': ml_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
         'Total Unit': ml_portfolio['Total Unit'].sum(),
@@ -528,6 +529,7 @@ elif view_mode == "ML Overall":
     
 
 else:
+    st.markdown(f"### 🏢 {current_company} ")
     prop_id = view_mode
     prop_data = final_df[final_df['Property ID'] == prop_id].iloc[0]
     # 展示地址
