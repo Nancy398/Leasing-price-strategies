@@ -576,7 +576,7 @@ else:
         with col3:
             st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100)):,.2f}")
         st.write("---")
-        st.write(f"### 📈 {prop_id} 历史经营趋势 (近6个月)")
+        st.write(f"### 📈 {prop_id} Historical Rent(6 Months)")
         
         # 1. 获取参考数值
         fixed_cost = prop_data['Total_Fixed']
@@ -586,51 +586,87 @@ else:
         # 2. 获取并排序历史数据
         history_df = pd.read_csv("Airbnbrent.csv")
         history_df['Month'] = pd.to_datetime(history_df['Month'], errors='coerce')
-        prop_history = history_df[history_df['Property ID'] == prop_id].copy()
-        prop_history = prop_history.sort_values('Month', ascending=True)
+        prop_history = history_df[(history_df['Property ID'] == prop_id) & (history_df['Month'].notna())].copy()
+        prop_history = prop_history.sort_values('Month')
     
-    # 2. 过滤当前物业的数据并排序
-
         if not prop_history.empty:
-            # --- 核心逻辑：获取最近 6 个月的数据 ---
-            # 方法：取数据集中最大的月份，往前推 5 个月（共 6 个点）
+            # 获取 6 个月数据
             latest_month = prop_history['Month'].max()
             six_months_ago = latest_month - pd.DateOffset(months=5)
-            
-            # 只保留最近 6 个月的数据
             history_data = prop_history[prop_history['Month'] >= six_months_ago]
             
+            fixed_cost = current_prop_row['Total_Fixed']
+            # Target 设为 1.3 倍固定成本
+            target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3) 
+    
             st.write(f"### 📈 {prop_id} 历史经营趋势 (最近 6 个月)")
     
-            # --- 3. 绘图部分 ---
-            fig = px.line(
-                history_data, 
-                x='Month', 
-                y='Rent',
-                markers=True,
-                text='Rent',
-                title=f"Recent 6-Month Performance: {six_months_ago.strftime('%Y-%m')} to {latest_month.strftime('%Y-%m')}"
+            # 使用 go.Figure 进行高级自定义
+            fig = go.Figure()
+    
+            # A. 绘制实际租金实线
+            fig.add_trace(go.Scatter(
+                x=history_data['Month'], 
+                y=history_data['Rent'],
+                mode='lines+markers+text',
+                name='Actual Rent',
+                # 租金字体颜色与 Moo Housing 蓝色一致
+                text=history_data['Rent'].map('${:,.0f}'.format),
+                textposition="top center",
+                textfont=dict(family="Arial", size=11, color="#1A365D"),
+                line=dict(color="#1A365D", width=4), # Moo Housing 蓝色
+                marker=dict(color="white", size=10, line=dict(color="#1A365D", width=2))
+            ))
+    
+            # B. 绘制固定成本线 (红色虚线)
+            fig.add_hline(
+                y=fixed_cost, 
+                line_dash="dash", 
+                line_color="#E53E3E", # 红色
+                annotation_text=f"Fixed Cost: ${fixed_cost:,.0f}", 
+                annotation_position="bottom right",
+                annotation_font=dict(color="#E53E3E", size=12)
             )
     
-            # 4. 叠加参考线 (与之前逻辑一致)
-            fixed_cost = current_prop_row['Total_Fixed']
-            target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3)
+            # C. 绘制目标租金线 (金色实线)
+            fig.add_hline(
+                y=target_rent, 
+                line_color="#D4AF37", # 金色
+                line_width=1.5,
+                annotation_text=f"Target: ${target_rent:,.0f}", 
+                annotation_position="top right",
+                annotation_font=dict(color="#D4AF37", size=12)
+            )
     
-            fig.add_hline(y=fixed_cost, line_dash="dash", line_color="red", 
-                          annotation_text="Fixed Cost")
-            fig.add_hline(y=target_rent, line_dash="dot", line_color="green", 
-                          annotation_text="Target")
-    
-            # 5. 格式化横轴：强制显示每一个月份
-            fig.update_xaxes(
-                dtick="M1",              # 强制每月一个刻度
-                tickformat="%b %Y"       # 显示格式如 "Jan 2024"
+            # D. 图表布局美化
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', # 透明背景
+                plot_bgcolor='rgba(0,0,0,0)',  # 透明绘图区
+                margin=dict(l=20, r=20, t=30, b=20),
+                height=400,
+                hovermode="x unified",
+                showlegend=False, # 隐藏图例，通过水平线标注更直观
+                # y 轴网格线设置
+                yaxis=dict(
+                    tickformat='$,.0f',
+                    gridcolor='#E2E8F0', # 浅灰色网格
+                    showgrid=True,
+                    range=[0, max(history_data['Rent'].max(), target_rent) * 1.25], # 留有顶空
+                ),
+                # x 轴设置
+                xaxis=dict(
+                    dtick="M1",
+                    tickformat="%b %Y",
+                    showgrid=False
+                )
             )
             
-            fig.update_layout(yaxis_title="Rent ($)", xaxis_title="")
-            st.plotly_chart(fig, use_container_width=True)
+            # 将图表放入 st.container 增加内边距
+            with st.container():
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}) # 隐藏 Plotly 工具栏
+                
         else:
-            st.info("暂无历史租金数据")
+            st.info("💡 暂无该 Airbnb 物业的历史租金数据。")
         
     else:
         col1, col2, col3, col4 = st.columns(4)
