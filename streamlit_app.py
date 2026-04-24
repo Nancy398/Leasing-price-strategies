@@ -566,7 +566,7 @@ else:
     target_profit_pct = st.slider(
         "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
     )
-    if currnet_type == "Airbnb":
+    if current_type == "Airbnb":
         prop_data['Total_Fixed'] = prop_data['Total_Fixed']-prop_data['Total Unit']*30
         col1, col2, col3 = st.columns(3)
         with col1:
