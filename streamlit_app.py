@@ -591,79 +591,79 @@ else:
     
         if not prop_history.empty:
         # 1. 准备数据
-        latest_month = prop_history['Month'].max()
-        six_months_ago = latest_month - pd.DateOffset(months=5)
-        history_data = prop_history[prop_history['Month'] >= six_months_ago]
-        
-        fixed_cost = current_prop_row['Total_Fixed']
-        target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3)
-
-
-        # --- 2. 在图表下方设置开关选项 ---
-        # 我们先创建一个容器用来放图表，稍后再渲染
-        chart_container = st.container()
-
-        # 在图表下方创建三个小列来放置开关
-        st.write("显示选项:")
-        ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 2])
-        
-        with ctrl_col1:
-            show_fixed = st.checkbox("🚩 显示固定成本线", value=True)
-        with ctrl_col2:
-            show_target = st.checkbox("🎯 显示目标租金线", value=True)
-
-        # --- 3. 构建 Plotly 图表 ---
-        fig = go.Figure()
-
-        # 实际租金线
-        fig.add_trace(go.Scatter(
-            x=history_data['Month'], 
-            y=history_data['Rent'],
-            mode='lines+markers+text',
-            name='Actual Rent',
-            text=history_data['Rent'].map('${:,.0f}'.format),
-            textposition="top center",
-            line=dict(color="#1A365D", width=4),
-            marker=dict(color="white", size=10, line=dict(color="#1A365D", width=2))
-        ))
-
-        # 根据开关状态添加参考线
-        if show_fixed:
-            fig.add_hline(
-                y=fixed_cost, 
-                line_dash="dash", 
-                line_color="#E53E3E",
-                annotation_text=f"Fixed Cost: ${fixed_cost:,.0f}", 
-                annotation_position="bottom right"
+            latest_month = prop_history['Month'].max()
+            six_months_ago = latest_month - pd.DateOffset(months=5)
+            history_data = prop_history[prop_history['Month'] >= six_months_ago]
+            
+            fixed_cost = current_prop_row['Total_Fixed']
+            target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3)
+    
+    
+            # --- 2. 在图表下方设置开关选项 ---
+            # 我们先创建一个容器用来放图表，稍后再渲染
+            chart_container = st.container()
+    
+            # 在图表下方创建三个小列来放置开关
+            st.write("显示选项:")
+            ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 2])
+            
+            with ctrl_col1:
+                show_fixed = st.checkbox("🚩 显示固定成本线", value=True)
+            with ctrl_col2:
+                show_target = st.checkbox("🎯 显示目标租金线", value=True)
+    
+            # --- 3. 构建 Plotly 图表 ---
+            fig = go.Figure()
+    
+            # 实际租金线
+            fig.add_trace(go.Scatter(
+                x=history_data['Month'], 
+                y=history_data['Rent'],
+                mode='lines+markers+text',
+                name='Actual Rent',
+                text=history_data['Rent'].map('${:,.0f}'.format),
+                textposition="top center",
+                line=dict(color="#1A365D", width=4),
+                marker=dict(color="white", size=10, line=dict(color="#1A365D", width=2))
+            ))
+    
+            # 根据开关状态添加参考线
+            if show_fixed:
+                fig.add_hline(
+                    y=fixed_cost, 
+                    line_dash="dash", 
+                    line_color="#E53E3E",
+                    annotation_text=f"Fixed Cost: ${fixed_cost:,.0f}", 
+                    annotation_position="bottom right"
+                )
+    
+            if show_target:
+                fig.add_hline(
+                    y=target_rent, 
+                    line_dash="dot",
+                    line_color="#D4AF37",
+                    annotation_text=f"Target: ${target_rent:,.0f}", 
+                    annotation_position="top right"
+                )
+    
+            # 图表样式优化
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                margin=dict(l=20, r=20, t=30, b=20),
+                height=450,
+                hovermode="x unified",
+                yaxis=dict(
+                    tickformat='$,.0f',
+                    gridcolor='#E2E8F0',
+                    range=[0, max(history_data['Rent'].max(), target_rent) * 1.3]
+                ),
+                xaxis=dict(dtick="M1", tickformat="%b %Y", showgrid=False)
             )
-
-        if show_target:
-            fig.add_hline(
-                y=target_rent, 
-                line_dash="dot",
-                line_color="#D4AF37",
-                annotation_text=f"Target: ${target_rent:,.0f}", 
-                annotation_position="top right"
-            )
-
-        # 图表样式优化
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            margin=dict(l=20, r=20, t=30, b=20),
-            height=450,
-            hovermode="x unified",
-            yaxis=dict(
-                tickformat='$,.0f',
-                gridcolor='#E2E8F0',
-                range=[0, max(history_data['Rent'].max(), target_rent) * 1.3]
-            ),
-            xaxis=dict(dtick="M1", tickformat="%b %Y", showgrid=False)
-        )
-
-        # 4. 在刚才预留的容器中渲染图表
-        with chart_container:
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+    
+            # 4. 在刚才预留的容器中渲染图表
+            with chart_container:
+                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         
     else:
         col1, col2, col3, col4 = st.columns(4)
