@@ -576,13 +576,16 @@ else:
         with col3:
             st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100)):,.2f}")
         st.write("---")
-        st.write(f"### 📈 {prop_id} Historical Rent(12 Months)")
+        st.write(f"### 📈 {prop_id} Historical Rent")
     
         # --- 历史数据处理 ---
         history_df = pd.read_csv("Airbnbrent.csv")
         history_df['Month'] = pd.to_datetime(history_df['Month'], errors='coerce')
         prop_history = history_df[(history_df['Property ID'] == prop_id) & (history_df['Month'].notna())].copy()
         prop_history = prop_history.sort_values('Month')
+        current_fixed_cost = prop_data['Total_Fixed']
+        target_rent_value = prop_data['Total_Fixed']/(1-target_profit_pct/100)
+        
     
         if not prop_history.empty:
             # 1. 设置图表容器（占位，确保图表在开关上方）
