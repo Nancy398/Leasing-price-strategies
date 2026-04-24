@@ -574,7 +574,7 @@ else:
         with col2:
             st.metric("总成本（Total Cost）", f"${int(prop_data['Total_Fixed']):,.2f}")
         with col3:
-            st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100):,.2f}")
+            st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100)):,.2f}")
     else:
         col1, col2, col3, col4 = st.columns(4)
         
