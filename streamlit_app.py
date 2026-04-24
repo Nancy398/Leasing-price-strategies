@@ -22,7 +22,7 @@ def get_tenant_access_token():
     return r.json().get("tenant_access_token")
 
 
-def fetch_bitable_table(table_id):
+def fetch_bitable_data(table_id):
     token = get_tenant_access_token()
     
     if not token:
