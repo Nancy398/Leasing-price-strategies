@@ -276,35 +276,37 @@ st.title("PROPERTY LEASING STRATEGY")
 
 group_mapping = {}
 
-# 添加 Type 维度 (MH, ML)
+# A. 把 Type 列里的分类加进去 (ML, MH)
 for t in final_df['Type'].unique():
-    group_mapping[t] = sorted(final_df[final_df['Type'] == t]['Property ID'].unique().tolist())
+    if t and str(t) != 'nan':
+        group_mapping[t] = sorted(final_df[final_df['Type'] == t]['Property ID'].unique().tolist())
 
-# 添加 Group/Area 维度 (假设你的列名是 'Group')
-if 'Group' in final_df.columns:
-    for g in final_df['Group'].unique():
+# B. 把 Group/Area 列里的分类也加进去 (USC, UCLA...)
+# 假设你的列名就叫 'Group'，如果叫 'Area' 请修改下方字段名
+group_col = 'Group' 
+if group_col in final_df.columns:
+    for g in final_df[group_col].unique():
         if g and str(g) != 'nan':
-            # 如果这个 Group 已经存在（比如名字和 Type 重了），则合并，否则新建
-            ids = sorted(final_df[final_df['Group'] == g]['Property ID'].unique().tolist())
+            # 如果 group 名字和 type 重复了，这里会自动合并
+            ids = sorted(final_df[final_df[group_col] == g]['Property ID'].unique().tolist())
             group_mapping[g] = ids
 
-# 获取所有可选的群组名称
-all_groups = sorted(list(group_mapping.keys()))
+# 获取所有合并后的分类名称
+all_categories = sorted(list(group_mapping.keys()))
 
-# --- 2. 两列布局：左边选群组，右边选物业 ---
-col_type, col_prop = st.columns([1, 2])
+# --- 2. 两列布局设计 ---
+col_cat, col_prop = st.columns([1, 2])
 
-with col_type:
-    selected_group = st.selectbox("Select Perspective (Type/Group)", all_groups)
+with col_cat:
+    # 这里的下拉框现在包含了所有模式和区域：[MH, ML, UCLA, USC...]
+    selected_cat = st.selectbox("Select Category", all_categories)
 
 with col_prop:
-    # 根据左边选中的群组，过滤出该群组下的 ID
-    available_ids = group_mapping[selected_group]
-    
-    # 这里的 prop_id 依然作为后续计算的核心变量
+    # 根据选中的类别（不管是 ML 还是 USC），刷出对应的 ID
+    available_ids = group_mapping[selected_cat]
     prop_id = st.selectbox("Select Property ID", available_ids)
 
-# --- 3. 基础数据准备 (保持不变) ---
+# --- 3. 基础数据准备 (与原逻辑一致) ---
 current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
 current_company = current_prop_row['Company']
 current_type = current_prop_row['Type']
