@@ -529,11 +529,10 @@ elif view_mode == "ML Overall":
     
 
 else:
-    st.markdown(f"### 🏢 {current_company} ")
     prop_id = view_mode
     prop_data = final_df[final_df['Property ID'] == prop_id].iloc[0]
     # 展示地址
-    st.markdown(f"### 📍 地址: {prop_data['Address']}")
+    st.markdown(f"##### 📍 Address: {prop_data['Address']}")
     st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
     
     # --- 2. 关键指标卡片 ---
