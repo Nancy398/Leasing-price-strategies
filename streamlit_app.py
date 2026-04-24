@@ -675,8 +675,8 @@ else:
             # 在上方容器渲染
             with chart_container:
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            else:
-                st.info("No historical data found for this property.")
+        else:
+            st.info("No historical data found for this property.")
             
         else:
             col1, col2, col3, col4 = st.columns(4)
