@@ -22,34 +22,41 @@ def get_tenant_access_token():
     return r.json().get("tenant_access_token")
 
 
-def fetch_bitable_data(TABLE_ID):
+def fetch_bitable_table(table_id):
     token = get_tenant_access_token()
-
+    
     if not token:
-        st.error("[Sticker] token 是空的")
+        st.error("❌ token 获取失败")
         return pd.DataFrame()
 
+    url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{table_id}/records"
     headers = {"Authorization": f"Bearer {token}"}
-    
-    url = f"https://open.larksuite.com/open-apis/bitable/v1/apps/{APP_TOKEN}/tables/{TABLE_ID}/records"
-    res = requests.get(url, headers=headers)
-    data = res.json()
 
-    # [Sticker] 关键：token 无效时强制重新获取（绕过 cache）
-    if data.get("msg") == "Invalid access token for authorization":
-        st.warning("[Sticker] token 失效，重新获取中...")
-        
-        token = get_tenant_access_token()  # 再拿一次
-        headers = {"Authorization": f"Bearer {token}"}
-        res = requests.get(url, headers=headers)
+    all_items = []
+    page_token = None
+
+    while True:
+        params = {}
+        if page_token:
+            params["page_token"] = page_token
+
+        res = requests.get(url, headers=headers, params=params)
         data = res.json()
 
-    if data.get("code") == 0:
+        if data.get("code") != 0:
+            st.error(f"❌ 抓取失败: {data}")
+            return pd.DataFrame()
+
         items = data.get("data", {}).get("items", [])
-        return pd.DataFrame([i["fields"] for i in items])
-    else:
-        st.error(f"[Sticker] 抓取失败: {data}")
-        return pd.DataFrame()
+        all_items.extend(items)
+
+        # 👉 关键：判断是否还有下一页
+        if not data.get("data", {}).get("has_more"):
+            break
+
+        page_token = data.get("data", {}).get("page_token")
+
+    return pd.DataFrame([i["fields"] for i in all_items])
         
 leases_df = pd.read_csv("Leases.csv")
 lark_df_USC = fetch_bitable_data(TABLE_ID) 
