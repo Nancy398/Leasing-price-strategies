@@ -572,9 +572,9 @@ else:
         with col1:
             st.metric("总房间（Total Rooms）", int(prop_data['Total Unit']))
         with col2:
-            st.metric("总成本（Total Cost）", int(prop_data['Total_Fixed']))
+            st.metric("总成本（Total Cost）", f"${int(prop_data['Total_Fixed']):.2f}")
         with col3:
-            st.metric("总成本（Total Cost）", int(prop_data['Total_Fixed']*1+target_profit_pct))
+            st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']*1+target_profit_pct):.2f}")
     else:
         col1, col2, col3, col4 = st.columns(4)
         
