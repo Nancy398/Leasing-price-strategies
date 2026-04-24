@@ -54,6 +54,7 @@ def fetch_bitable_data(TABLE_ID):
 leases_df = pd.read_csv("Leases.csv")
 lark_df_USC = fetch_bitable_data(TABLE_ID) 
 lark_df_UCLA = fetch_bitable_data(TABLE_ID_1)
+st.dataframe(lark_df_USC)
 
 lark_df_UCLA = lark_df_UCLA[[
     "Unit - Room Number",
