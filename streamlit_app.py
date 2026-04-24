@@ -430,13 +430,13 @@ if view_mode == "Whole":
 
 elif view_mode == "ML Overall":
     agg_dict = {
-        'Type': company_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
-        'Total Unit': company_portfolio['Total Unit'].sum(),
-        'Total_Fixed': company_portfolio['Total_Fixed'].sum(),
-        'Leased_Units': company_portfolio['Leased_Units'].sum(),
-        'Already_Leased_Rev': company_portfolio['Already_Leased_Rev'].sum(),
-        'Vacant_Units': company_portfolio['Vacant_Units'].sum(),
-        'Total_Commission': company_portfolio['Total Unit'].sum() * 50
+        'Type': ml_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
+        'Total Unit': ml_portfolio['Total Unit'].sum(),
+        'Total_Fixed': ml_portfolio['Total_Fixed'].sum(),
+        'Leased_Units': ml_portfolio['Leased_Units'].sum(),
+        'Already_Leased_Rev': ml_portfolio['Already_Leased_Rev'].sum(),
+        'Vacant_Units': ml_portfolio['Vacant_Units'].sum(),
+        'Total_Commission': ml_portfolio['Total Unit'].sum() * 50
         
     }
     prop_data = pd.Series(agg_dict)
