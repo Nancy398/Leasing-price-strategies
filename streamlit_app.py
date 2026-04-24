@@ -274,21 +274,37 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
 ##----SHOW-----
 st.title("PROPERTY LEASING STRATEGY")
 
-col_type, col_prop = st.columns([1, 3])
+group_mapping = {}
+
+# 添加 Type 维度 (MH, ML)
+for t in final_df['Type'].unique():
+    group_mapping[t] = sorted(final_df[final_df['Type'] == t]['Property ID'].unique().tolist())
+
+# 添加 Group/Area 维度 (假设你的列名是 'Group')
+if 'Group' in final_df.columns:
+    for g in final_df['Group'].unique():
+        if g and str(g) != 'nan':
+            # 如果这个 Group 已经存在（比如名字和 Type 重了），则合并，否则新建
+            ids = sorted(final_df[final_df['Group'] == g]['Property ID'].unique().tolist())
+            group_mapping[g] = ids
+
+# 获取所有可选的群组名称
+all_groups = sorted(list(group_mapping.keys()))
+
+# --- 2. 两列布局：左边选群组，右边选物业 ---
+col_type, col_prop = st.columns([1, 2])
 
 with col_type:
-    # 左侧选择类型
-    unique_types = sorted(final_df['Type'].unique().tolist())
-    selected_type = st.selectbox("Type", unique_types)
+    selected_group = st.selectbox("Select Perspective (Type/Group)", all_groups)
 
 with col_prop:
-    # 右侧根据左侧的选择，过滤出对应的 Property ID
-    filtered_ids = sorted(
-        final_df[final_df['Type'] == selected_type]['Property ID'].unique().tolist()
-    )
-    prop_id = st.selectbox("Select Property", filtered_ids)
+    # 根据左边选中的群组，过滤出该群组下的 ID
+    available_ids = group_mapping[selected_group]
+    
+    # 这里的 prop_id 依然作为后续计算的核心变量
+    prop_id = st.selectbox("Select Property ID", available_ids)
 
-# --- 2. 基础数据准备 (与之前一致) ---
+# --- 3. 基础数据准备 (保持不变) ---
 current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
 current_company = current_prop_row['Company']
 current_type = current_prop_row['Type']
