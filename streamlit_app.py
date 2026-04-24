@@ -585,6 +585,7 @@ else:
     
         # 2. 获取并排序历史数据
         history_df = pd.read_csv("Airbnbrent.csv")
+        history_df['Month'] = pd.to_datetime(history_df['Month'], errors='coerce')
         prop_history = history_df[history_df['Property ID'] == prop_id].copy()
         prop_history = prop_history.sort_values('Month', ascending=True)
     
