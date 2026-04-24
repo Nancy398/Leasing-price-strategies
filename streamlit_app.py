@@ -601,16 +601,18 @@ else:
     
             # --- 2. 在图表下方设置开关选项 ---
             # 我们先创建一个容器用来放图表，稍后再渲染
-            chart_container = st.container()
+
     
             # 在图表下方创建三个小列来放置开关
             st.write("显示选项:")
             ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 2])
             
             with ctrl_col1:
-                show_fixed = st.checkbox("🚩 显示固定成本线", value=True)
+                show_fixed = st.checkbox("🚩 Show Total Cost", value=True)
             with ctrl_col2:
-                show_target = st.checkbox("🎯 显示目标租金线", value=True)
+                show_target = st.checkbox("🎯 Show Target", value=True)
+
+            chart_container = st.container()
     
             # --- 3. 构建 Plotly 图表 ---
             fig = go.Figure()
@@ -621,10 +623,30 @@ else:
                 y=history_data['Rent'],
                 mode='lines+markers+text',
                 name='Actual Rent',
+            
+                # 文本（金额）
                 text=history_data['Rent'].map('${:,.0f}'.format),
                 textposition="top center",
-                line=dict(color="#1A365D", width=4),
-                marker=dict(color="white", size=10, line=dict(color="#1A365D", width=2))
+                textfont=dict(size=11, color="#1A365D"),
+            
+                # 线条（更平滑+高级）
+                line=dict(
+                    color="#1A365D",
+                    width=3,
+                    shape="spline"   # 平滑曲线（关键提升质感）
+                ),
+            
+                # 点（更精致）
+                marker=dict(
+                    size=8,
+                    color="#1A365D",
+                    line=dict(color="white", width=2)
+                ),
+            
+                # hover（更专业）
+                hovertemplate=
+                    "<b>%{x}</b><br>" +
+                    "Rent: %{y:$,.0f}<extra></extra>"
             ))
     
             # 根据开关状态添加参考线
