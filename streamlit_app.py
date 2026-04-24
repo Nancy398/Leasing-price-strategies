@@ -576,7 +576,7 @@ else:
         with col3:
             st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100)):,.2f}")
         st.write("---")
-        st.write(f"### 📈 {prop_id} Historical Rent(6 Months)")
+        st.write(f"### 📈 {prop_id} Historical Rent(12 Months)")
         
         # 1. 获取参考数值
         fixed_cost = prop_data['Total_Fixed']
@@ -592,7 +592,7 @@ else:
         if not prop_history.empty:
         # 1. 准备数据
             latest_month = prop_history['Month'].max()
-            six_months_ago = latest_month - pd.DateOffset(months=5)
+            six_months_ago = latest_month - pd.DateOffset(months=11)
             history_data = prop_history[prop_history['Month'] >= six_months_ago]
             
             fixed_cost = prop_data['Total_Fixed']
