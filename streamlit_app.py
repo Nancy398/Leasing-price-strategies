@@ -589,7 +589,6 @@ else:
     
         if not prop_history.empty:
             # 1. 设置图表容器（占位，确保图表在开关上方）
-            chart_container = st.container()
     
             # 2. 控制面板（放在图表下方）
             st.write("🔧 **Display Options:**")
@@ -609,7 +608,7 @@ else:
                 show_fixed = st.toggle("🚩 Total Cost", value=True)
             with ctrl_col3:
                 show_target = st.toggle("🎯 Target", value=False)
-    
+            chart_container = st.container()
             # 3. 动态计算时间切片
             latest_month = prop_history['Month'].max()
             start_date = latest_month - pd.DateOffset(months=month_count - 1)
