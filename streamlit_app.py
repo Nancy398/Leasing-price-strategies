@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go 
 import plotly.express as px
+from datetime import datetime, timedelta
 
 
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
@@ -574,6 +575,62 @@ else:
             st.metric("总成本（Total Cost）", f"${int(prop_data['Total_Fixed']):,.2f}")
         with col3:
             st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100)):,.2f}")
+        st.write("---")
+        st.write(f"### 📈 {prop_id} 历史经营趋势 (近6个月)")
+        
+        # 1. 获取参考数值
+        fixed_cost = prop_data['Total_Fixed']
+        # 假设你的 target 租金在某列，或者根据业务逻辑设定（例如固定成本的 1.3 倍）
+        target_rent = prop_data['Total_Fixed']/(1-target_profit_pct/100)
+    
+        # 2. 获取并排序历史数据
+        history_df = pd.read_csv("Airbnbrent.csv")
+        prop_history = history_df[history_df['Property ID'] == prop_id].copy()
+        prop_history = prop_history.sort_values('Month', ascending=True)
+    
+    # 2. 过滤当前物业的数据并排序
+
+        if not prop_history.empty:
+            # --- 核心逻辑：获取最近 6 个月的数据 ---
+            # 方法：取数据集中最大的月份，往前推 5 个月（共 6 个点）
+            latest_month = prop_history['Month'].max()
+            six_months_ago = latest_month - pd.DateOffset(months=5)
+            
+            # 只保留最近 6 个月的数据
+            history_data = prop_history[prop_history['Month'] >= six_months_ago]
+            
+            st.write(f"### 📈 {prop_id} 历史经营趋势 (最近 6 个月)")
+    
+            # --- 3. 绘图部分 ---
+            fig = px.line(
+                history_data, 
+                x='Month', 
+                y='Rent',
+                markers=True,
+                text='Rent',
+                title=f"Recent 6-Month Performance: {six_months_ago.strftime('%Y-%m')} to {latest_month.strftime('%Y-%m')}"
+            )
+    
+            # 4. 叠加参考线 (与之前逻辑一致)
+            fixed_cost = current_prop_row['Total_Fixed']
+            target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3)
+    
+            fig.add_hline(y=fixed_cost, line_dash="dash", line_color="red", 
+                          annotation_text="Fixed Cost")
+            fig.add_hline(y=target_rent, line_dash="dot", line_color="green", 
+                          annotation_text="Target")
+    
+            # 5. 格式化横轴：强制显示每一个月份
+            fig.update_xaxes(
+                dtick="M1",              # 强制每月一个刻度
+                tickformat="%b %Y"       # 显示格式如 "Jan 2024"
+            )
+            
+            fig.update_layout(yaxis_title="Rent ($)", xaxis_title="")
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("暂无历史租金数据")
+        
     else:
         col1, col2, col3, col4 = st.columns(4)
         
