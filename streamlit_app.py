@@ -713,66 +713,66 @@ else:
         
         # --- 3. 出租率仪表盘 ---
         # --- 3. 出租率仪表盘 (蓝色调版) ---
+            st.write("---")
+            occ_rate = float(prop_data['Occupancy %']) * 100
+            
+            fig_gauge = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = occ_rate,
+                number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
+                title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
+                domain = {'x': [0, 1], 'y': [0, 1]},
+                gauge = {
+                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
+                    'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
+                    'bgcolor': "white",
+                    'borderwidth': 1,
+                    'bordercolor': "#e0e0e0",
+                    'steps': [
+                        {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
+                        {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
+                        {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
+                    ],
+                    'threshold': {
+                        'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
+                        'thickness': 0.75,
+                        'value': 95}
+                }
+            ))
+            
+            fig_gauge.update_layout(
+                height=300, 
+                margin=dict(l=30, r=30, t=50, b=20),
+                paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+            )
+            
+            st.plotly_chart(fig_gauge, use_container_width=True)
+            
+        
+        
+        # --- 4. 敏感性分析矩阵 ---
         st.write("---")
-        occ_rate = float(prop_data['Occupancy %']) * 100
+        st.subheader("Sensitivity Analysis")
         
-        fig_gauge = go.Figure(go.Indicator(
-            mode = "gauge+number",
-            value = occ_rate,
-            number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
-            title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
-            domain = {'x': [0, 1], 'y': [0, 1]},
-            gauge = {
-                'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
-                'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
-                'bgcolor': "white",
-                'borderwidth': 1,
-                'bordercolor': "#e0e0e0",
-                'steps': [
-                    {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
-                    {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
-                    {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
-                ],
-                'threshold': {
-                    'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
-                    'thickness': 0.75,
-                    'value': 95}
-            }
-        ))
+        # 局部滑轨控制矩阵范围
+        c1, c2 = st.columns(2)
+        with c1:
+            r_range = st.slider("Rent", 400, 2000, (800, 2000), step=50, key="prop_rent")
+        with c2:
+            v_range = st.slider("Vacancy", 0, int((prop_data['Total Unit']-prop_data['Leased_Units'])), (0, 5), key="prop_vac")
         
-        fig_gauge.update_layout(
-            height=300, 
-            margin=dict(l=30, r=30, t=50, b=20),
-            paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+        # 生成矩阵 (传入只含该物业的 DataFrame)
+        single_prop_df = final_df[final_df['Property ID'] == prop_id]
+        rent_levels = np.arange(r_range[0], r_range[1] + 50, 100)
+        vac_levels = list(range(v_range[0], v_range[1] + 1))
+        
+        noi_matrix = generate_dynamic_noi_matrix(single_prop_df, rent_levels, vac_levels)
+        
+        # 展示矩阵
+        st.dataframe(
+            noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
+            use_container_width=True
         )
-        
-        st.plotly_chart(fig_gauge, use_container_width=True)
-        
-    
-    
-    # --- 4. 敏感性分析矩阵 ---
-    st.write("---")
-    st.subheader("Sensitivity Analysis")
-    
-    # 局部滑轨控制矩阵范围
-    c1, c2 = st.columns(2)
-    with c1:
-        r_range = st.slider("Rent", 400, 2000, (800, 2000), step=50, key="prop_rent")
-    with c2:
-        v_range = st.slider("Vacancy", 0, int((prop_data['Total Unit']-prop_data['Leased_Units'])), (0, 5), key="prop_vac")
-    
-    # 生成矩阵 (传入只含该物业的 DataFrame)
-    single_prop_df = final_df[final_df['Property ID'] == prop_id]
-    rent_levels = np.arange(r_range[0], r_range[1] + 50, 100)
-    vac_levels = list(range(v_range[0], v_range[1] + 1))
-    
-    noi_matrix = generate_dynamic_noi_matrix(single_prop_df, rent_levels, vac_levels)
-    
-    # 展示矩阵
-    st.dataframe(
-        noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
-        use_container_width=True
-    )
 
 # --- 底部版权标 (Footer) ---
 st.markdown("""
