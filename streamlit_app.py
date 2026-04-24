@@ -657,7 +657,7 @@ else:
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                margin=dict(l=30, r=30, t=40, b=30),
+                margin=dict(l=30, r=30, t=10, b=30),
                 height=450,
                 hovermode="x unified",
                 font=dict(family="Inter, sans-serif", size=12, color="#2D3748"),
