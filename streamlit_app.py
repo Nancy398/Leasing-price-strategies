@@ -171,17 +171,6 @@ final_df['Occupancy %'] = (
 
 
 def calculate_target_price(df, profit_margin):
-    # # VariableRate: IF(Type == "MH", 0.12, 0)
-    # def get_mgmt_rate(row):
-    #     if row['Type'] == "MH":
-    #         return 0.12
-    #     elif row['Type'] == "ML":
-    #         return 0.02
-    #     else:
-    #         return 0.0
-            
-    # df['Variable_Rate'] = df.apply(get_mgmt_rate, axis=1)
-    # df['Denominator'] = 1 - df['Variable_Rate']
     
     # --- 2. 成本汇总 ---
     # TotalCommission = Total Unit * 50
@@ -276,37 +265,39 @@ st.title("PROPERTY LEASING STRATEGY")
 
 group_mapping = {}
 
-# A. 把 Type 列里的分类加进去 (ML, MH)
-for t in final_df['Type'].unique():
-    if t and str(t) != 'nan':
-        group_mapping[t] = sorted(final_df[final_df['Type'] == t]['Property ID'].unique().tolist())
+# 定义你想要整合的所有列名
+dimension_cols = ['Type', 'Group', 'Area']
 
-# B. 把 Group/Area 列里的分类也加进去 (USC, UCLA...)
-# 假设你的列名就叫 'Group'，如果叫 'Area' 请修改下方字段名
-group_col = 'Group' 
-if group_col in final_df.columns:
-    for g in final_df[group_col].unique():
-        if g and str(g) != 'nan':
-            # 如果 group 名字和 type 重复了，这里会自动合并
-            ids = sorted(final_df[final_df[group_col] == g]['Property ID'].unique().tolist())
-            group_mapping[g] = ids
+for col in dimension_cols:
+    if col in final_df.columns:
+        # 获取该列所有唯一值，并排除掉空值
+        unique_values = final_df[col].dropna().unique()
+        for val in unique_values:
+            val_str = str(val).strip()
+            if val_str and val_str.lower() != 'nan':
+                # 获取属于该标签的所有 Property ID
+                ids = sorted(final_df[final_df[col] == val]['Property ID'].unique().tolist())
+                
+                # 如果这个标签已经存在（比如某个标签既在 Group 又在 Area 出现），则取并集
+                if val_str in group_mapping:
+                    group_mapping[val_str] = sorted(list(set(group_mapping[val_str] + ids)))
+                else:
+                    group_mapping[val_str] = ids
 
-# 获取所有合并后的分类名称
+# 获取所有合并后的分类名称（如：ML, MH, USC, UCLA, Group_A...）
 all_categories = sorted(list(group_mapping.keys()))
 
-# --- 2. 两列布局设计 ---
+# --- 2. 两列布局：左边选分类标签，右边选具体物业 ---
 col_cat, col_prop = st.columns([1, 2])
 
 with col_cat:
-    # 这里的下拉框现在包含了所有模式和区域：[MH, ML, UCLA, USC...]
-    selected_cat = st.selectbox("Select Category", all_categories)
+    selected_cat = st.selectbox("Select Dimension (Type/Group/Area)", all_categories)
 
 with col_prop:
-    # 根据选中的类别（不管是 ML 还是 USC），刷出对应的 ID
     available_ids = group_mapping[selected_cat]
     prop_id = st.selectbox("Select Property ID", available_ids)
 
-# --- 3. 基础数据准备 (与原逻辑一致) ---
+# --- 3. 基础数据准备 ---
 current_prop_row = final_df[final_df['Property ID'] == prop_id].iloc[0]
 current_company = current_prop_row['Company']
 current_type = current_prop_row['Type']
