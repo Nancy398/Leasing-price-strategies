@@ -654,33 +654,62 @@ else:
                 fig.add_hline(
                     y=fixed_cost, 
                     line_dash="dash", 
-                    line_color="#E53E3E",
+                    line_color="#C53030",   # 柔和红（比你原来更高级）
+                    line_width=2,
+                    opacity=0.8,
                     annotation_text=f"Fixed Cost: ${fixed_cost:,.0f}", 
-                    annotation_position="bottom right"
+                    annotation_position="bottom right",
+                    annotation_font=dict(size=11, color="#C53030")
                 )
-    
+            
             if show_target:
                 fig.add_hline(
                     y=target_rent, 
                     line_dash="dot",
-                    line_color="#D4AF37",
+                    line_color="#B7791F",   # 金色但偏 muted（避免太亮）
+                    line_width=2,
+                    opacity=0.9,
                     annotation_text=f"Target: ${target_rent:,.0f}", 
-                    annotation_position="top right"
+                    annotation_position="top right",
+                    annotation_font=dict(size=11, color="#B7791F")
                 )
-    
-            # 图表样式优化
+            
+            
+            # === Layout 优化 ===
+            
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                margin=dict(l=20, r=20, t=30, b=20),
+            
+                margin=dict(l=30, r=30, t=40, b=30),
                 height=450,
+            
                 hovermode="x unified",
+            
+                # 字体统一（关键）
+                font=dict(
+                    family="Inter, sans-serif",
+                    size=12,
+                    color="#2D3748"
+                ),
+            
+                # y 轴
                 yaxis=dict(
                     tickformat='$,.0f',
                     gridcolor='#E2E8F0',
-                    range=[0, max(history_data['Rent'].max(), target_rent) * 1.3]
+                    gridwidth=1,
+                    zeroline=False,
+                    showline=False,
+                    range=[0, max(history_data['Rent'].max(), target_rent) * 1.25]
                 ),
-                xaxis=dict(dtick="M1", tickformat="%b %Y", showgrid=False)
+            
+                # x 轴
+                xaxis=dict(
+                    dtick="M1",
+                    tickformat="%b %Y",
+                    showgrid=False,
+                    tickfont=dict(color="#4A5568")
+                )
             )
     
             # 4. 在刚才预留的容器中渲染图表
