@@ -590,83 +590,80 @@ else:
         prop_history = prop_history.sort_values('Month')
     
         if not prop_history.empty:
-            # 获取 6 个月数据
-            latest_month = prop_history['Month'].max()
-            six_months_ago = latest_month - pd.DateOffset(months=5)
-            history_data = prop_history[prop_history['Month'] >= six_months_ago]
-            
-            fixed_cost = current_prop_row['Total_Fixed']
-            # Target 设为 1.3 倍固定成本
-            target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3) 
-    
-            st.write(f"### 📈 {prop_id} 历史经营趋势 (最近 6 个月)")
-    
-            # 使用 go.Figure 进行高级自定义
-            fig = go.Figure()
-    
-            # A. 绘制实际租金实线
-            fig.add_trace(go.Scatter(
-                x=history_data['Month'], 
-                y=history_data['Rent'],
-                mode='lines+markers+text',
-                name='Actual Rent',
-                # 租金字体颜色与 Moo Housing 蓝色一致
-                text=history_data['Rent'].map('${:,.0f}'.format),
-                textposition="top center",
-                textfont=dict(family="Arial", size=11, color="#1A365D"),
-                line=dict(color="#1A365D", width=4), # Moo Housing 蓝色
-                marker=dict(color="white", size=10, line=dict(color="#1A365D", width=2))
-            ))
-    
-            # B. 绘制固定成本线 (红色虚线)
+        # 1. 准备数据
+        latest_month = prop_history['Month'].max()
+        six_months_ago = latest_month - pd.DateOffset(months=5)
+        history_data = prop_history[prop_history['Month'] >= six_months_ago]
+        
+        fixed_cost = current_prop_row['Total_Fixed']
+        target_rent = current_prop_row.get('Target_Rent', fixed_cost * 1.3)
+
+
+        # --- 2. 在图表下方设置开关选项 ---
+        # 我们先创建一个容器用来放图表，稍后再渲染
+        chart_container = st.container()
+
+        # 在图表下方创建三个小列来放置开关
+        st.write("显示选项:")
+        ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 2])
+        
+        with ctrl_col1:
+            show_fixed = st.checkbox("🚩 显示固定成本线", value=True)
+        with ctrl_col2:
+            show_target = st.checkbox("🎯 显示目标租金线", value=True)
+
+        # --- 3. 构建 Plotly 图表 ---
+        fig = go.Figure()
+
+        # 实际租金线
+        fig.add_trace(go.Scatter(
+            x=history_data['Month'], 
+            y=history_data['Rent'],
+            mode='lines+markers+text',
+            name='Actual Rent',
+            text=history_data['Rent'].map('${:,.0f}'.format),
+            textposition="top center",
+            line=dict(color="#1A365D", width=4),
+            marker=dict(color="white", size=10, line=dict(color="#1A365D", width=2))
+        ))
+
+        # 根据开关状态添加参考线
+        if show_fixed:
             fig.add_hline(
                 y=fixed_cost, 
                 line_dash="dash", 
-                line_color="#E53E3E", # 红色
+                line_color="#E53E3E",
                 annotation_text=f"Fixed Cost: ${fixed_cost:,.0f}", 
-                annotation_position="bottom right",
-                annotation_font=dict(color="#E53E3E", size=12)
+                annotation_position="bottom right"
             )
-    
-            # C. 绘制目标租金线 (金色实线)
+
+        if show_target:
             fig.add_hline(
                 y=target_rent, 
-                line_color="#D4AF37", # 金色
-                line_width=1.5,
+                line_dash="dot",
+                line_color="#D4AF37",
                 annotation_text=f"Target: ${target_rent:,.0f}", 
-                annotation_position="top right",
-                annotation_font=dict(color="#D4AF37", size=12)
+                annotation_position="top right"
             )
-    
-            # D. 图表布局美化
-            fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', # 透明背景
-                plot_bgcolor='rgba(0,0,0,0)',  # 透明绘图区
-                margin=dict(l=20, r=20, t=30, b=20),
-                height=400,
-                hovermode="x unified",
-                showlegend=False, # 隐藏图例，通过水平线标注更直观
-                # y 轴网格线设置
-                yaxis=dict(
-                    tickformat='$,.0f',
-                    gridcolor='#E2E8F0', # 浅灰色网格
-                    showgrid=True,
-                    range=[0, max(history_data['Rent'].max(), target_rent) * 1.25], # 留有顶空
-                ),
-                # x 轴设置
-                xaxis=dict(
-                    dtick="M1",
-                    tickformat="%b %Y",
-                    showgrid=False
-                )
-            )
-            
-            # 将图表放入 st.container 增加内边距
-            with st.container():
-                st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False}) # 隐藏 Plotly 工具栏
-                
-        else:
-            st.info("💡 暂无该 Airbnb 物业的历史租金数据。")
+
+        # 图表样式优化
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=20, r=20, t=30, b=20),
+            height=450,
+            hovermode="x unified",
+            yaxis=dict(
+                tickformat='$,.0f',
+                gridcolor='#E2E8F0',
+                range=[0, max(history_data['Rent'].max(), target_rent) * 1.3]
+            ),
+            xaxis=dict(dtick="M1", tickformat="%b %Y", showgrid=False)
+        )
+
+        # 4. 在刚才预留的容器中渲染图表
+        with chart_container:
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         
     else:
         col1, col2, col3, col4 = st.columns(4)
