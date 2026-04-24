@@ -577,45 +577,42 @@ else:
             st.metric("目标（Target）", f"${int(prop_data['Total_Fixed']/(1-target_profit_pct/100)):,.2f}")
         st.write("---")
         st.write(f"### 📈 {prop_id} Historical Rent(12 Months)")
-        
-        # 1. 获取参考数值
-        fixed_cost = prop_data['Total_Fixed']
-        # 假设你的 target 租金在某列，或者根据业务逻辑设定（例如固定成本的 1.3 倍）
-        target_rent = prop_data['Total_Fixed']/(1-target_profit_pct/100)
     
-        # 2. 获取并排序历史数据
+        # --- 历史数据处理 ---
         history_df = pd.read_csv("Airbnbrent.csv")
         history_df['Month'] = pd.to_datetime(history_df['Month'], errors='coerce')
         prop_history = history_df[(history_df['Property ID'] == prop_id) & (history_df['Month'].notna())].copy()
         prop_history = prop_history.sort_values('Month')
     
         if not prop_history.empty:
-        # 1. 准备数据
-            latest_month = prop_history['Month'].max()
-            six_months_ago = latest_month - pd.DateOffset(months=11)
-            history_data = prop_history[prop_history['Month'] >= six_months_ago]
-            
-            fixed_cost = prop_data['Total_Fixed']
-            # 假设你的 target 租金在某列，或者根据业务逻辑设定（例如固定成本的 1.3 倍）
-            target_rent = prop_data['Total_Fixed']/(1-target_profit_pct/100)
-    
-    
-            # --- 2. 在图表下方设置开关选项 ---
-            # 我们先创建一个容器用来放图表，稍后再渲染
-
-    
-            # 在图表下方创建三个小列来放置开关
-            st.write("显示选项:")
-            ctrl_col1, ctrl_col2, _ = st.columns([1, 1, 2])
-            
-            with ctrl_col1:
-                show_fixed = st.checkbox("🚩 Show Total Cost", value=True)
-            with ctrl_col2:
-                show_target = st.checkbox("🎯 Show Target", value=False)
-
+            # 1. 设置图表容器（占位，确保图表在开关上方）
             chart_container = st.container()
     
-            # --- 3. 构建 Plotly 图表 ---
+            # 2. 控制面板（放在图表下方）
+            st.write("🔧 **Display Options:**")
+            ctrl_col1, ctrl_col2, ctrl_col3 = st.columns([1.5, 1, 1])
+    
+            with ctrl_col1:
+                # 增加时间跨度选项，默认选择 6 Months
+                time_span = st.segmented_control(
+                    "Time Span",
+                    options=["6 Months", "12 Months"],
+                    default="6 Months",
+                    label_visibility="collapsed"
+                )
+                month_count = 6 if time_span == "6 Months" else 12
+    
+            with ctrl_col2:
+                show_fixed = st.toggle("🚩 Total Cost", value=True)
+            with ctrl_col3:
+                show_target = st.toggle("🎯 Target", value=False)
+    
+            # 3. 动态计算时间切片
+            latest_month = prop_history['Month'].max()
+            start_date = latest_month - pd.DateOffset(months=month_count - 1)
+            history_data = prop_history[prop_history['Month'] >= start_date]
+    
+            # 4. 构建图表
             fig = go.Figure()
     
             # 实际租金线
@@ -624,166 +621,130 @@ else:
                 y=history_data['Rent'],
                 mode='lines+markers+text',
                 name='Actual Rent',
-            
-                # 文本（金额）
                 text=history_data['Rent'].map('${:,.0f}'.format),
                 textposition="top center",
                 textfont=dict(size=11, color="#1A365D"),
-            
-                # 线条（更平滑+高级）
-                line=dict(
-                    color="#1A365D",
-                    width=3,
-                    shape="spline"   # 平滑曲线（关键提升质感）
-                ),
-            
-                # 点（更精致）
-                marker=dict(
-                    size=8,
-                    color="#1A365D",
-                    line=dict(color="white", width=2)
-                ),
-            
-                # hover（更专业）
-                hovertemplate=
-                    "<b>%{x}</b><br>" +
-                    "Rent: %{y:$,.0f}<extra></extra>"
+                line=dict(color="#1A365D", width=3, shape="spline"), # 高级平滑曲线
+                marker=dict(size=8, color="#1A365D", line=dict(color="white", width=2)),
+                hovertemplate="<b>%{x}</b><br>Rent: %{y:$,.0f}<extra></extra>"
             ))
     
-            # 根据开关状态添加参考线
+            # 确定 y 轴的最大范围（需考虑开启的参考线）
+            y_max_check = [history_data['Rent'].max()]
             if show_fixed:
+                y_max_check.append(current_fixed_cost)
                 fig.add_hline(
-                    y=fixed_cost, 
+                    y=current_fixed_cost, 
                     line_dash="dash", 
-                    line_color="#C53030",   # 柔和红（比你原来更高级）
-                    line_width=2,
-                    opacity=0.8,
-                    annotation_text=f"Fixed Cost: ${fixed_cost:,.0f}", 
-                    annotation_position="bottom right",
-                    annotation_font=dict(size=11, color="#C53030")
+                    line_color="#C53030", 
+                    annotation_text=f"Cost: ${current_fixed_cost:,.0f}",
+                    annotation_position="bottom right"
                 )
             
             if show_target:
+                y_max_check.append(target_rent_value)
                 fig.add_hline(
-                    y=target_rent, 
-                    line_dash="dot",
-                    line_color="#B7791F",   # 金色但偏 muted（避免太亮）
-                    line_width=2,
-                    opacity=0.9,
-                    annotation_text=f"Target: ${target_rent:,.0f}", 
-                    annotation_position="top right",
-                    annotation_font=dict(size=11, color="#B7791F")
+                    y=target_rent_value, 
+                    line_dash="dot", 
+                    line_color="#B7791F", 
+                    annotation_text=f"Target: ${target_rent_value:,.0f}",
+                    annotation_position="top right"
                 )
-            
-            
-            # === Layout 优化 ===
-            
+    
+            # 布局优化
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-            
                 margin=dict(l=30, r=30, t=40, b=30),
                 height=450,
-            
                 hovermode="x unified",
-            
-                # 字体统一（关键）
-                font=dict(
-                    family="Inter, sans-serif",
-                    size=12,
-                    color="#2D3748"
-                ),
-            
-                # y 轴
+                font=dict(family="Inter, sans-serif", size=12, color="#2D3748"),
                 yaxis=dict(
                     tickformat='$,.0f',
                     gridcolor='#E2E8F0',
-                    gridwidth=1,
                     zeroline=False,
-                    showline=False,
-                    range=[0, max(history_data['Rent'].max(), target_rent) * 1.25]
+                    range=[0, max(y_max_check) * 1.25] # 动态适配高度
                 ),
-            
-                # x 轴
                 xaxis=dict(
                     dtick="M1",
                     tickformat="%b %Y",
-                    showgrid=False,
-                    tickfont=dict(color="#4A5568")
+                    showgrid=False
                 )
             )
     
-            # 4. 在刚才预留的容器中渲染图表
+            # 在上方容器渲染
             with chart_container:
                 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-        
-    else:
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
-        
-        with col2:
-            st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:,.2f}")
-        
-        with col3:
-            # 这里的 Est_NOI 可以是当前状态下的 NOI
-            # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
-            st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
-        
-        with col4:    
-            # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
-            target_margin = target_profit_pct / 100
-            denominator = 1 - prop_data['Variable_Rate'] - target_margin
+        else:
+            st.info("No historical data found for this property.")
             
-            if denominator > 0 and prop_data['Vacant_Units'] > 0:
-                total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
-                req_rev = total_req_costs / denominator
-                target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
-            else:
-                target_price = 0  # 或者显示 np.nan
+        else:
+            col1, col2, col3, col4 = st.columns(4)
             
-            # C. 最后渲染数字卡片
-            # 这样它显示的就是刚刚算好的最新 target_price
-            st.metric("目标租金 (Target)", f"${target_price:,.2f}")
-        
-        # --- 3. 出租率仪表盘 ---
-        # --- 3. 出租率仪表盘 (蓝色调版) ---
-        st.write("---")
-        occ_rate = float(prop_data['Occupancy %']) * 100
-        
-        fig_gauge = go.Figure(go.Indicator(
-            mode = "gauge+number",
-            value = occ_rate,
-            number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
-            title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
-            domain = {'x': [0, 1], 'y': [0, 1]},
-            gauge = {
-                'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
-                'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
-                'bgcolor': "white",
-                'borderwidth': 1,
-                'bordercolor': "#e0e0e0",
-                'steps': [
-                    {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
-                    {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
-                    {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
-                ],
-                'threshold': {
-                    'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
-                    'thickness': 0.75,
-                    'value': 95}
-            }
-        ))
-        
-        fig_gauge.update_layout(
-            height=300, 
-            margin=dict(l=30, r=30, t=50, b=20),
-            paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
-        )
-        
-        st.plotly_chart(fig_gauge, use_container_width=True)
-        
+            with col1:
+                st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+            
+            with col2:
+                st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:,.2f}")
+            
+            with col3:
+                # 这里的 Est_NOI 可以是当前状态下的 NOI
+                # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
+                st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
+            
+            with col4:    
+                # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
+                target_margin = target_profit_pct / 100
+                denominator = 1 - prop_data['Variable_Rate'] - target_margin
+                
+                if denominator > 0 and prop_data['Vacant_Units'] > 0:
+                    total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
+                    req_rev = total_req_costs / denominator
+                    target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
+                else:
+                    target_price = 0  # 或者显示 np.nan
+                
+                # C. 最后渲染数字卡片
+                # 这样它显示的就是刚刚算好的最新 target_price
+                st.metric("目标租金 (Target)", f"${target_price:,.2f}")
+            
+            # --- 3. 出租率仪表盘 ---
+            # --- 3. 出租率仪表盘 (蓝色调版) ---
+            st.write("---")
+            occ_rate = float(prop_data['Occupancy %']) * 100
+            
+            fig_gauge = go.Figure(go.Indicator(
+                mode = "gauge+number",
+                value = occ_rate,
+                number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
+                title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
+                domain = {'x': [0, 1], 'y': [0, 1]},
+                gauge = {
+                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
+                    'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
+                    'bgcolor': "white",
+                    'borderwidth': 1,
+                    'bordercolor': "#e0e0e0",
+                    'steps': [
+                        {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
+                        {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
+                        {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
+                    ],
+                    'threshold': {
+                        'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
+                        'thickness': 0.75,
+                        'value': 95}
+                }
+            ))
+            
+            fig_gauge.update_layout(
+                height=300, 
+                margin=dict(l=30, r=30, t=50, b=20),
+                paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+            )
+            
+            st.plotly_chart(fig_gauge, use_container_width=True)
+            
         
         
         # --- 4. 敏感性分析矩阵 ---
