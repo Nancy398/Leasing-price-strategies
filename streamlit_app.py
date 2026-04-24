@@ -280,46 +280,52 @@ company_portfolio = final_df[final_df['Company'] == current_company].copy()
 # 获取全平台 ML 组合
 ml_portfolio = final_df[final_df['Type'] == "ML"].copy()
 
-# --- 2. 动态构建选项按钮列表 ---
-# 初始选项：只有当前选中的 ID
-options = [prop_id]
+# --- 2. 动态构建所有选项按钮 ---
+# 获取同公司所有 Property ID 列表
+options = company_portfolio['Property ID'].unique().tolist()
 
-# 逻辑 A：如果有同公司其他物业，增加 "Whole"
+# 增加 "Whole" 选项（如果该公司有多个地）
 if len(company_portfolio) > 1:
     options.append("Whole")
 
-# 逻辑 B：如果当前物业是 ML，且全平台有其他 ML 物业，增加 "ML Overall"
+# 如果当前选中的是 ML，增加 "ML Overall" 选项
 if current_type == "ML" and len(ml_portfolio) > 1:
     options.append("ML Overall")
 
 # --- 3. 渲染按钮组 ---
-st.markdown(f"### 🏢 {current_company}")
+st.markdown(f"### 🏢 {current_company} Portfolio")
 
-# 初始化或检查 session_state
+# 初始化 session_state
 if "current_view" not in st.session_state:
     st.session_state.current_view = prop_id
 
-# 重要：如果用户切换了下拉框的 prop_id，而旧的 view_mode 已经不适用新选项了，强制重置
+# 核心同步逻辑：如果用户在上面的 Selectbox 换了 ID，下面的按钮也要跟着变
+# 或者如果旧的 view 模式在当前公司的选项里找不到了，就重置
 if st.session_state.current_view not in options:
     st.session_state.current_view = prop_id
 
-# 动态列：让按钮平铺
+# 动态列：让所有按钮（ID们 + Whole + ML）铺满整行
 cols = st.columns(len(options))
 
 for i, opt in enumerate(options):
-    # 定义按钮显示的名称
-    label = opt
-    if opt == prop_id: label = f"🏠 {opt}"
-    elif opt == "Whole": label = "🏢 Whole Company"
-    elif opt == "ML Overall": label = "📊 ML Overall"
-
+    # 样式处理
+    is_selected = (st.session_state.current_view == opt)
+    
+    # 按钮显示逻辑
+    if opt == "Whole":
+        label = "🏢 Whole"
+    elif opt == "ML Overall":
+        label = "📊 ML Total"
+    else:
+        label = str(opt) # 具体的 Property ID
+        
     if cols[i].button(label, use_container_width=True, 
-                      type="primary" if st.session_state.current_view == opt else "secondary"):
+                      type="primary" if is_selected else "secondary"):
         st.session_state.current_view = opt
+        # 如果用户点的是具体的某个 ID 按钮，我们同步更新上面的 selectbox（可选）
         st.rerun()
 
 view_mode = st.session_state.current_view
-
 
 if view_mode == "Whole":
     all_addresses = company_portfolio['Address'].unique().tolist()
@@ -421,6 +427,104 @@ if view_mode == "Whole":
     )
     
     st.plotly_chart(fig_gauge, use_container_width=True)
+
+elif view_mode == "ML Overall":
+    agg_dict = {
+        'Type': company_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
+        'Total Unit': company_portfolio['Total Unit'].sum(),
+        'Total_Fixed': company_portfolio['Total_Fixed'].sum(),
+        'Leased_Units': company_portfolio['Leased_Units'].sum(),
+        'Already_Leased_Rev': company_portfolio['Already_Leased_Rev'].sum(),
+        'Vacant_Units': company_portfolio['Vacant_Units'].sum(),
+        'Total_Commission': company_portfolio['Total Unit'].sum() * 50
+        
+    }
+    prop_data = pd.Series(agg_dict)
+    prop_data['Variable_Rate'] = 0.12 if prop_data['Type'] == "MH" else (0.02 if prop_data['Type'] == "ML" else 0.0)
+    prop_data['Denominator'] = 1 - prop_data['Variable_Rate']
+    prop_data['Occupancy %'] = prop_data['Leased_Units'] / prop_data['Total Unit'] if prop_data['Total Unit'] > 0 else 0
+    prop_data['Total_Required_Costs'] = prop_data['Total_Fixed'] + prop_data['Total_Commission']
+    prop_data['Required_Total_Rev'] = prop_data['Total_Required_Costs'] / prop_data['Denominator']
+    prop_data['Gap_To_Fill'] = prop_data['Required_Total_Rev'] - prop_data['Already_Leased_Rev']
+    prop_data['Breakeven_Rent'] = np.where(
+        prop_data['Vacant_Units'] <= 0,
+        0,
+        prop_data['Gap_To_Fill'] / prop_data['Vacant_Units']
+    )
+# Current Average Leased
+    if prop_data['Leased_Units'] > 0:
+        prop_data['Current_Avg_Leased'] = prop_data['Already_Leased_Rev'] / prop_data['Leased_Units']
+    else:
+        prop_data['Current_Avg_Leased'] = 0.0
+    target_profit_pct = st.slider(
+        "Set Margin (%)", 0.0, 20.0, 5.0, 1.0, key="margin_slider"
+    )
+    col1, col2, col3,col4 = st.columns(4)
+    
+    with col1:
+        st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+    
+    with col2:
+        st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:.2f}")
+    
+    with col3:
+        # 这里的 Est_NOI 可以是当前状态下的 NOI
+        # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
+        st.metric("预计 NOI (Current)", f"${prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']:,.0f}")
+    
+    with col4:    
+        # B. 在这里执行计算逻辑 (不要在外面，就在这里算)
+        target_margin = target_profit_pct / 100
+        denominator = 1 - prop_data['Variable_Rate'] - target_margin
+        
+        if denominator > 0 and prop_data['Vacant_Units'] > 0:
+            total_req_costs = prop_data['Total_Fixed'] + (prop_data['Total Unit'] * 50)
+            req_rev = total_req_costs / denominator
+            target_price = (req_rev - prop_data['Already_Leased_Rev']) / prop_data['Vacant_Units']
+        else:
+            target_price = 0  # 或者显示 np.nan
+        
+        # C. 最后渲染数字卡片
+        # 这样它显示的就是刚刚算好的最新 target_price
+        st.metric("目标租金 (Target)", f"${target_price:,.2f}")
+    
+    # --- 3. 出租率仪表盘 ---
+    # --- 3. 出租率仪表盘 (蓝色调版) ---
+    st.write("---")
+    occ_rate = float(prop_data['Occupancy %']) * 100
+    
+    fig_gauge = go.Figure(go.Indicator(
+        mode = "gauge+number",
+        value = occ_rate,
+        number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
+        title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        gauge = {
+            'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
+            'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
+            'bgcolor': "white",
+            'borderwidth': 1,
+            'bordercolor': "#e0e0e0",
+            'steps': [
+                {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
+                {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
+                {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
+            ],
+            'threshold': {
+                'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
+                'thickness': 0.75,
+                'value': 95}
+        }
+    ))
+    
+    fig_gauge.update_layout(
+        height=300, 
+        margin=dict(l=30, r=30, t=50, b=20),
+        paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+    )
+    
+    st.plotly_chart(fig_gauge, use_container_width=True)
+
     
 
 else:
