@@ -316,6 +316,7 @@ if len(company_portfolio) > 1:
 
 # 如果当前选中的是 ML，增加 "ML Overall" 选项
 if current_type == "ML" and len(ml_portfolio) > 1:
+    st.markdown(f"### 🏢 {current_company} ")
     options.append("ML Overall")
 
 # --- 3. 渲染按钮组 ---
