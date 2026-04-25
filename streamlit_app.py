@@ -480,6 +480,7 @@ else:
         all_addresses = company_portfolio['Address'].unique().tolist()
         address_display = " | ".join([f"{addr}" if addr == current_prop_row['Address'] else addr for addr in all_addresses])
         st.markdown(f"#### 📍 地址: {address_display}")
+        company_portfolio = company_portfolio[company_portfolio['Type']!= 'Airbnb']
         agg_dict = {
             'Company': current_company,
             'Type': company_portfolio['Type'].iloc[0], # 假设费率以第一个为准，或逻辑自定义
