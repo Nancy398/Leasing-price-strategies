@@ -678,9 +678,9 @@ else:
     else:
         prop_id = view_mode
         prop_data = final_df[final_df['Property ID'] == prop_id].iloc[0]
+        current_type = prop_data['Type']
         # 展示地址
         if current_type=="Airbnb":
-            prop_data=current_prop_row
             st.markdown(f"##### 📍 Address: {prop_data['Address']}")
             st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
             # --- 2. 关键指标卡片 ---
