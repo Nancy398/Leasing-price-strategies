@@ -311,7 +311,7 @@ ml_portfolio = final_df[final_df['Type'] == "ML"].copy()
 options = company_portfolio['Property ID'].unique().tolist()
 
 # 增加 "Whole" 选项（如果该公司有多个地）
-if len(company_portfolio) > 1:
+if len(company_portfolio) > 1 & current_type!="Airbnb":
     options.append("Whole")
 
 # 如果当前选中的是 ML，增加 "ML Overall" 选项
