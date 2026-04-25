@@ -309,6 +309,7 @@ ml_portfolio = final_df[final_df['Type'] == "ML"].copy()
 # --- 2. 动态构建所有选项按钮 ---
 # 获取同公司所有 Property ID 列表
 if current_type=="Airbnb":
+    prop_data=current_prop_row
     st.markdown(f"##### 📍 Address: {prop_data['Address']}")
     st.write(f"物业类型: {prop_data['Type']} | 公司: {prop_data['Company']}")
     # --- 2. 关键指标卡片 ---
