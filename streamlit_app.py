@@ -713,40 +713,40 @@ else:
         
         # --- 3. 出租率仪表盘 ---
         # --- 3. 出租率仪表盘 (蓝色调版) ---
-            st.write("---")
-            occ_rate = float(prop_data['Occupancy %']) * 100
-            
-            fig_gauge = go.Figure(go.Indicator(
-                mode = "gauge+number",
-                value = occ_rate,
-                number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
-                title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                gauge = {
-                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
-                    'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
-                    'bgcolor': "white",
-                    'borderwidth': 1,
-                    'bordercolor': "#e0e0e0",
-                    'steps': [
-                        {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
-                        {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
-                        {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
-                    ],
-                    'threshold': {
-                        'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
-                        'thickness': 0.75,
-                        'value': 95}
-                }
-            ))
-            
-            fig_gauge.update_layout(
-                height=300, 
-                margin=dict(l=30, r=30, t=50, b=20),
-                paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
-            )
-            
-            st.plotly_chart(fig_gauge, use_container_width=True)
+        st.write("---")
+        occ_rate = float(prop_data['Occupancy %']) * 100
+        
+        fig_gauge = go.Figure(go.Indicator(
+            mode = "gauge+number",
+            value = occ_rate,
+            number = {'suffix': "%", 'font': {'color': "#1f77b4"}}, # 数字也设为蓝色
+            title = {'text': "Occupancy Rate", 'font': {'size': 20, 'color': "#1f77b4"}},
+            domain = {'x': [0, 1], 'y': [0, 1]},
+            gauge = {
+                'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#1f77b4"},
+                'bar': {'color': "#003f5c"}, # 进度指针用最深的颜色
+                'bgcolor': "white",
+                'borderwidth': 1,
+                'bordercolor': "#e0e0e0",
+                'steps': [
+                    {'range': [0, 70], 'color': "#f0f4f8"},   # 极浅蓝灰
+                    {'range': [70, 90], 'color': "#d1e3f0"},  # 浅蓝色
+                    {'range': [90, 100], 'color': "#a3c1da"}  # 中蓝色
+                ],
+                'threshold': {
+                    'line': {'color': "#ff4b4b", 'width': 3}, # 阈值线保留一点红色作为警示，或改为深蓝
+                    'thickness': 0.75,
+                    'value': 95}
+            }
+        ))
+        
+        fig_gauge.update_layout(
+            height=300, 
+            margin=dict(l=30, r=30, t=50, b=20),
+            paper_bgcolor = "rgba(0,0,0,0)", # 透明背景适应主题
+        )
+        
+        st.plotly_chart(fig_gauge, use_container_width=True)
             
         
         
