@@ -136,7 +136,7 @@ final_df['Vacant_Units'] = final_df['Total Unit'] - final_df['Leased_Units']
 
 def set_mgmt_rate(prop_type):
     if prop_type == "MH":
-        return 0.12
+        return 0.16
     elif prop_type == "ML":
         return 0.02
     else:
@@ -233,7 +233,7 @@ def generate_dynamic_noi_matrix(df, rent_levels, vac_levels):
     # # 2. 确定管理费率 (如果是 MH 类型则为 12%)
     def get_matrix_mgmt_rate(prop_type):
         if prop_type == "MH":
-            return 0.12
+            return 0.16
         elif prop_type == "ML":
             return 0.02
         else:
@@ -493,7 +493,7 @@ else:
             
         }
         prop_data = pd.Series(agg_dict)
-        prop_data['Variable_Rate'] = 0.12 if prop_data['Type'] == "MH" else (0.02 if prop_data['Type'] == "ML" else 0.0)
+        prop_data['Variable_Rate'] = 0.16 if prop_data['Type'] == "MH" else (0.02 if prop_data['Type'] == "ML" else 0.0)
         prop_data['Denominator'] = 1 - prop_data['Variable_Rate']
         prop_data['Occupancy %'] = prop_data['Leased_Units'] / prop_data['Total Unit'] if prop_data['Total Unit'] > 0 else 0
         prop_data['Total_Required_Costs'] = prop_data['Total_Fixed'] + prop_data['Total_Commission']
@@ -591,7 +591,7 @@ else:
             
         }
         prop_data = pd.Series(agg_dict)
-        prop_data['Variable_Rate'] = 0.12 if prop_data['Type'] == "MH" else (0.02 if prop_data['Type'] == "ML" else 0.0)
+        prop_data['Variable_Rate'] = 0.16 if prop_data['Type'] == "MH" else (0.02 if prop_data['Type'] == "ML" else 0.0)
         prop_data['Denominator'] = 1 - prop_data['Variable_Rate']
         prop_data['Occupancy %'] = prop_data['Leased_Units'] / prop_data['Total Unit'] if prop_data['Total Unit'] > 0 else 0
         prop_data['Total_Required_Costs'] = prop_data['Total_Fixed'] + prop_data['Total_Commission']
