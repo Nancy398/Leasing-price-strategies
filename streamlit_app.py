@@ -834,7 +834,7 @@ else:
                 # C. 最后渲染数字卡片
                 # 这样它显示的就是刚刚算好的最新 target_price
                 st.metric("目标租金 (Target)", f"${target_price:,.2f}")
-            col1, col2, col3 = columns([1.3, 1.3, 1.3 ])
+            col1, col2, col3 = st.columns([1.3, 1.3, 1.3 ])
             with col1:
                 st.metric("DSCR", prop_data['DSCR'])
             
