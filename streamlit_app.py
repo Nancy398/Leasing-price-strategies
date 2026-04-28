@@ -116,7 +116,7 @@ for col in cost_cols:
             errors='coerce'
         ).fillna(0)
 cost_df['Total_Fixed'] = cost_df[cost_cols].sum(axis=1)
-cost_summary = cost_df[['Property ID', 'Total_Fixed']]
+cost_summary = cost_df[['Property ID', 'Total_Fixed','Mortgage Loan Interest']]
 
 signed_leases_df = merged_df[merged_df['Lease Status'] == 'Lease Signed'].copy()
 
@@ -168,9 +168,6 @@ final_df['Occupancy %'] = (
     final_df['Leased_Units'] / final_df['Total Unit']
 ).fillna(0)
 st.dataframe(final_df)
-
-
-
 def calculate_target_price(df, profit_margin):
     # --- 2. 成本汇总 ---
     # TotalCommission = Total Unit * 50
@@ -837,6 +834,19 @@ else:
                 # C. 最后渲染数字卡片
                 # 这样它显示的就是刚刚算好的最新 target_price
                 st.metric("目标租金 (Target)", f"${target_price:,.2f}")
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("DSCR", int(prop_data['DSCR']))
+            
+            with col2:
+                dscr_rent =(((prop_data['Mortgage Loan Interest']*(prop_data['DSCR']-1)+prop_data['Total_Fixed']+prop_data['Leased_Units']*50)/prop_data['Variable_Rate'])-prop_data['Already_Leased_Rev'])/prop_data['Vacant_Units']
+                st.metric("DSCR Rent", f"${dscr_rent:,.2f}")
+            
+            with col3:
+                # 这里的 Est_NOI 可以是当前状态下的 NOI
+                # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
+                current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed'])/prop_data['Mortgage Loan Interest']
+                st.metric("Current DSCR", f"${current_dscr:,.0f}")
             
             # --- 3. 出租率仪表盘 ---
             # --- 3. 出租率仪表盘 (蓝色调版) ---
