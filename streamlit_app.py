@@ -167,7 +167,6 @@ final_df['Current_Avg_Leased'] = final_df['Current_Avg_Leased'].replace([np.inf,
 final_df['Occupancy %'] = (
     final_df['Leased_Units'] / final_df['Total Unit']
 ).fillna(0)
-st.dataframe(final_df)
 def calculate_target_price(df, profit_margin):
     # --- 2. 成本汇总 ---
     # TotalCommission = Total Unit * 50
