@@ -834,24 +834,22 @@ else:
                 # C. 最后渲染数字卡片
                 # 这样它显示的就是刚刚算好的最新 target_price
                 st.metric("目标租金 (Target)", f"${target_price:,.2f}")
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col1:
-                st.metric("DSCR", prop_data['DSCR'])
-            
-            with col2:
-                dscr_rent =(((prop_data['Mortgage Loan Interest']*prop_data['DSCR']+prop_data['Total_Fixed']+prop_data['Leased_Units']*50)/(1-prop_data['Variable_Rate']))-prop_data['Already_Leased_Rev'])/prop_data['Vacant_Units']
-                st.metric("DSCR Rent", f"${dscr_rent:,.2f}")
-            
-            with col3:
-                # 这里的 Est_NOI 可以是当前状态下的 NOI
-                # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
-                if prop_data['Mortgage Loan Interest'] > 0:
+            if prop_data['Mortgage Loan Interest'] > 0:
+                col1, col2, col3 = st.columns([1.5, 1.5, 1])
+                with col1:
+                    st.metric("DSCR", prop_data['DSCR'])
+                
+                with col2:
+                    dscr_rent =(((prop_data['Mortgage Loan Interest']*(prop_data['DSCR']-1)+prop_data['Total_Fixed']+prop_data['Total Unit']*50)/(1-prop_data['Variable_Rate']))-prop_data['Already_Leased_Rev'])/prop_data['Vacant_Units']
+                    st.metric("DSCR Rent", f"${dscr_rent:,.2f}")
+                
+                with col3:
+                    # 这里的 Est_NOI 可以是当前状态下的 NOI
+                    # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
                     current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed'])/prop_data['Mortgage Loan Interest']
                     st.metric("Current DSCR", f"{current_dscr:.2f}")
-                else:
-                    current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed'])/prop_data['Total_Fixed']
-                    st.metric("Current DSCR", f"{current_dscr:.2f}")
-                    
+            
+
             
             # --- 3. 出租率仪表盘 ---
             # --- 3. 出租率仪表盘 (蓝色调版) ---
