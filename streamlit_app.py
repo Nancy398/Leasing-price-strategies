@@ -836,7 +836,7 @@ else:
                 st.metric("目标租金 (Target)", f"${target_price:,.2f}")
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("DSCR", (prop_data['DSCR'])
+                st.metric("DSCR", prop_data['DSCR'])
             
             with col2:
                 dscr_rent =(((prop_data['Mortgage Loan Interest']*(prop_data['DSCR']-1)+prop_data['Total_Fixed']+prop_data['Leased_Units']*50)/prop_data['Variable_Rate'])-prop_data['Already_Leased_Rev'])/prop_data['Vacant_Units']
