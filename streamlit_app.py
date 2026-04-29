@@ -918,6 +918,7 @@ with tab1:
                     noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
                     use_container_width=True
                 )
+
 with tab2:
     @st.cache_data(ttl=300)
     def read_file(name,sheet):
