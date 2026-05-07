@@ -93,13 +93,24 @@ lark_df_UCLA = lark_df_UCLA[[
 
 lark_df = pd.concat([lark_df_USC, lark_df_UCLA], ignore_index=True)
 
-leases_df['Room Number'] = leases_df['Room Number'].astype(str).str.strip()
-lark_df['Room Number'] = lark_df['Room Number'].astype(str).str.strip()
+leases_df['Room Number_clean'] = (
+    leases_df['Room Number']
+    .astype(str)
+    .str.replace(r'\s+', '', regex=True)
+    .str.strip()
+)
+
+lark_df['Room Number_clean'] = (
+    lark_df['Room Number']
+    .astype(str)
+    .str.replace(r'\s+', '', regex=True)
+    .str.strip()
+)
 
 merged_df = pd.merge(
-    leases_df, 
-    lark_df[['Room Number', 'Real Price','Lease Status', 'Monthly Concession']], 
-    on='Room Number', 
+    leases_df,
+    lark_df[['Room Number_clean', 'Real Price', 'Lease Status', 'Monthly Concession']],
+    on='Room Number_clean',
     how='left'
 )
 st.dataframe(merged_df)
