@@ -113,7 +113,6 @@ merged_df = pd.merge(
     on='Room Number_clean',
     how='left'
 )
-st.dataframe(merged_df)
 
 merged_df['Real Price'] = pd.to_numeric(merged_df['Real Price'], errors='coerce').fillna(0)
 merged_df['Monthly Concession'] = pd.to_numeric(merged_df['Monthly Concession'], errors='coerce').fillna(0)
