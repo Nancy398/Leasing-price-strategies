@@ -858,7 +858,7 @@ else:
                 with col3:
                     # 这里的 Est_NOI 可以是当前状态下的 NOI
                     # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
-                    current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed'])/prop_data['Mortgage Loan Interest']+1
+                    current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']+prop_data['Mortgage Loan Interest'])/prop_data['Mortgage Loan Interest']
                     st.metric("Current DSCR", f"{current_dscr:.2f}")
             
 
