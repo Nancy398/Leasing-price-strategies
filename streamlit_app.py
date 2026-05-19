@@ -925,6 +925,75 @@ else:
                 noi_matrix.style.background_gradient(cmap='Blues', axis=None).format("${:,.0f}"),
                 use_container_width=True
             )
+            st.write(f"### 📈 {prop_id} Historical Rent & Net Income ({current_type})")
+
+            # 统一读取 PropertyRent.csv（确保里面包含该 ML/MH 的 ID 历史数据）
+            mh_history_df = pd.read_csv("PropertyRent.csv")
+            mh_history_df['Month'] = pd.to_datetime(mh_history_df['Month'], errors='coerce')
+            prop_mh_history = mh_history_df[(mh_history_df['PropertyID'] == prop_id) & (mh_history_df['Month'].notna())].copy()
+            prop_mh_history = prop_mh_history.sort_values('Month')
+
+            if not prop_mh_history.empty:
+                # 动态计算总扣除成本
+                total_deduction = 0
+                if include_tax: total_deduction += monthly_tax
+                if include_insurance: total_deduction += monthly_insurance
+                if include_mortgage: total_deduction += monthly_mortgage
+
+                # 生成动态 Net Income
+                prop_mh_history['Net Income'] = prop_mh_history['Rent'] - total_deduction
+
+                # 创建 Plotly 图表
+                fig_mh = go.Figure()
+
+                # 1. 原始总租金线 (Gross Rent)
+                fig_mh.add_trace(go.Scatter(
+                    x=prop_mh_history['Month'],
+                    y=prop_mh_history['Rent'],
+                    mode='lines+markers',
+                    name='Gross Rent',
+                    line=dict(color='gray', width=1.5, dash='dash'),
+                    hovertemplate="Gross Rent: %{y:$,.0f}<extra></extra>"
+                ))
+
+                # 2. 动态净利润线 (Net Income)
+                fig_mh.add_trace(go.Scatter(
+                    x=prop_mh_history['Month'],
+                    y=prop_mh_history['Net Income'],
+                    mode='lines+markers+text',
+                    name='Calculated Net Income',
+                    text=prop_mh_history['Net Income'].map('${:,.0f}'.format),
+                    textposition="top center",
+                    textfont=dict(size=11, color="#2F855A"),
+                    line=dict(color="#2F855A", width=3, shape="spline"),
+                    marker=dict(size=8, color="#2F855A", line=dict(color="white", width=2)),
+                    hovertemplate="Net Income: %{y:$,.0f}<extra></extra>"
+                ))
+
+                # 布局优化
+                y_max = max(prop_mh_history['Rent'].max(), prop_mh_history['Net Income'].max())
+                y_min = min(0, prop_mh_history['Net Income'].min())
+
+                fig_mh.update_layout(
+                    paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                    margin=dict(l=30, r=30, t=20, b=30), height=450, hovermode="x unified",
+                    font=dict(family="Inter, sans-serif", size=12, color="#2D3748"),
+                    yaxis=dict(tickformat='$,.0f', gridcolor='#E2E8F0', range=[y_min * 1.1, y_max * 1.25]),
+                    xaxis=dict(dtick="M1", tickformat="%b %Y", showgrid=False),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                )
+
+                st.plotly_chart(fig_mh, use_container_width=True, config={'displayModeBar': False})
+
+                # 显示最新月份的快速看板
+                latest_row = prop_mh_history.iloc[-1]
+                st.metric(
+                    label=f"最新月份净利润 Net Income ({latest_row['Month'].strftime('%Y-%m')})", 
+                    value=f"${latest_row['Net Income']:,.2f}",
+                    delta=f"-${total_deduction:,.2f} Costs Deducted" if total_deduction > 0 else "Gross Rent"
+                )
+            else:
+                st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
     
 
 # --- 底部版权标 (Footer) ---
