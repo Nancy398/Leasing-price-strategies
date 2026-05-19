@@ -926,9 +926,8 @@ else:
                 use_container_width=True
             )
             st.write(f"### 📈 {prop_id} Historical Rent & Net Income ({current_type})")
-            st.write("---")
-            st.subheader("📊 Financial Cost Options")
             st.write("勾选下方项以在折线图中扣除并计算 Net Income：")
+            st.dataframe(prop_data)
             monthly_tax = float(prop_data.get('Tax', 0))
             monthly_insurance = float(prop_data.get('Insurance', 0))
             monthly_mortgage = float(prop_data.get('Mortgage Loan Interest', 0))
