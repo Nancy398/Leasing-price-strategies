@@ -926,6 +926,20 @@ else:
                 use_container_width=True
             )
             st.write(f"### 📈 {prop_id} Historical Rent & Net Income ({current_type})")
+            st.write("---")
+            st.subheader("📊 Financial Cost Options")
+            st.write("勾选下方项以在折线图中扣除并计算 Net Income：")
+
+            # 渲染成本扣除复选框
+            col_bx1, col_bx2, col_bx3 = st.columns(3)
+            with col_bx1:
+                include_tax = st.checkbox(f"Tax (${monthly_tax:,.2f}/月)", value=False, key=f"tax_{prop_id}")
+            with col_bx2:
+                include_insurance = st.checkbox(f"Insurance (${monthly_insurance:,.2f}/月)", value=False, key=f"ins_{prop_id}")
+            with col_bx3:
+                include_mortgage = st.checkbox(f"Mortgage (${monthly_mortgage:,.2f}/月)", value=False, key=f"mort_{prop_id}")
+
+            st.write(f"### 📈 {prop_id} Historical Rent & Net Income ({current_type})")
 
             # 统一读取 PropertyRent.csv（确保里面包含该 ML/MH 的 ID 历史数据）
             mh_history_df = pd.read_csv("PropertyRent.csv")
