@@ -929,7 +929,9 @@ else:
             st.write("---")
             st.subheader("📊 Financial Cost Options")
             st.write("勾选下方项以在折线图中扣除并计算 Net Income：")
-
+            monthly_tax = float(prop_data.get('Tax', 0))
+            monthly_insurance = float(prop_data.get('Insurance', 0))
+            monthly_mortgage = float(prop_data.get('Mortgage Loan Interest', 0))
             # 渲染成本扣除复选框
             col_bx1, col_bx2, col_bx3 = st.columns(3)
             with col_bx1:
