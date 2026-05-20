@@ -1049,23 +1049,38 @@ else:
                 
                 comp_df = pd.DataFrame(comparison_list)
                 if not comp_df.empty:
-                    comp_df = comp_df.sort_values('Efficiency', ascending=True)
+                    # 【调整 1】改为降序排列，这样图表在视觉上会从左到右“由高到低”呈现
+                    comp_df = comp_df.sort_values('Efficiency', ascending=False)
                     colors = ['#3182CE' if x == prop_id else '#CBD5E0' for x in comp_df['Property ID']]
 
+                    # 【调整 2】X轴和Y轴对调，去掉 orientation='h'
                     fig_comp = go.Figure(go.Bar(
-                        x=comp_df['Efficiency'], y=comp_df['Property ID'],
-                        orientation='v', marker_color=colors,
-                        text=comp_df['Efficiency'].map('${:,.2f}'.format), textposition='outside',
+                        x=comp_df['Property ID'],  # X轴变成物业ID
+                        y=comp_df['Efficiency'],   # Y轴变成效益数值
+                        marker_color=colors,
+                        text=comp_df['Efficiency'].map('${:,.2f}'.format), 
+                        textposition='outside',    # 文本会自动显示在柱子顶部
                         customdata=comp_df['Type'],
-                        hovertemplate="<b>Property:</b> %{y}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
+                        hovertemplate="<b>Property:</b> %{x}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{y:$,.2f}/Unit<extra></extra>"
                     ))
 
+                    # 【调整 3】优化布局，高度固定，宽度自适应
                     fig_comp.update_layout(
                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                        margin=dict(l=100, r=50, t=10, b=10),
-                        height=max(200, len(comp_df) * 40),
-                        xaxis=dict(title="Efficiency ($ / Unit)", tickformat='$,.0f', gridcolor='#E2E8F0', zeroline=True, zerolinecolor='gray'),
-                        yaxis=dict(showgrid=False), font=dict(family="Inter, sans-serif", size=12)
+                        margin=dict(l=50, r=50, t=30, b=50),
+                        height=400,  # 纵向图高度固定即可，宽度会随页面自动拉伸
+                        yaxis=dict(
+                            title="Efficiency ($ / Unit)", 
+                            tickformat='$,.0f', 
+                            gridcolor='#E2E8F0', 
+                            zeroline=True, 
+                            zerolinecolor='gray'
+                        ),
+                        xaxis=dict(
+                            showgrid=False,
+                            tickangle=-45  # 💡 如果你的物业 ID 比较长，倾斜 45 度防止文字重叠
+                        ), 
+                        font=dict(family="Inter, sans-serif", size=12)
                     )
                     st.plotly_chart(fig_comp, use_container_width=True, config={'displayModeBar': False})
                     st.caption(f"💡 注：蓝色高亮柱状图为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current_type}** 类型。")
