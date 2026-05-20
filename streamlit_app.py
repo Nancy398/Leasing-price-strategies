@@ -1022,7 +1022,8 @@ else:
                 latest_target_month = latest_row['Month']
                 all_rent_latest = mh_history_df[mh_history_df['Month'] == latest_target_month].copy()
                 st.dataframe(final_df)
-                unit_mapping = final_df.set_index('Property ID')[['Total Unit', 'Type']].to_dict('index')
+                clean_final_df = final_df.drop_duplicates(subset=['Property ID'])
+                unit_mapping = clean_final_df.set_index('Property ID')[['Total Unit', 'Type']].to_dict('index')
                 
                 comparison_list = []
                 for idx, row in all_rent_latest.iterrows():
