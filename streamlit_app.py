@@ -1016,32 +1016,35 @@ else:
                         # delta=delta_str
                     )
                 st.write("---")
-                st.subheader("📊 Portfolio Efficiency Comparison (Latest Month)")
-                st.write("对比当前所有 MH / ML 物业在最新月份的单房效益（Net Income / Total Unit）：")
+                # 动态显示标题，如：📊 MH Portfolio Efficiency Comparison
+                st.subheader(f"📊 {current_type} Portfolio Efficiency Comparison (Latest Month)")
+                st.write(f"对比当前大盘中所有 **{current_type}** 物业在最新月份的单房效益（Net Income / Total Unit）：")
 
                 latest_target_month = latest_row['Month']
                 all_rent_latest = mh_history_df[mh_history_df['Month'] == latest_target_month].copy()
-                st.dataframe(final_df)
+
+                # 确保 Property ID 唯一
                 clean_final_df = final_df.drop_duplicates(subset=['Property ID'])
                 unit_mapping = clean_final_df.set_index('Property ID')[['Total Unit', 'Type']].to_dict('index')
                 
                 comparison_list = []
                 for idx, row in all_rent_latest.iterrows():
                     pid = row['PropertyID']
-                    if pid in unit_mapping and unit_mapping[pid]['Type'] in ['MH', 'ML']:
+                    
+                    # 【核心修改点】：不仅要检查存在性，还要严格限制 type 必须等于当前选中的 current_type (MH 或 ML)
+                    if pid in unit_mapping and unit_mapping[pid]['Type'] == current_type:
                         p_units = int(unit_mapping[pid]['Total Unit'])
                         p_units = p_units if p_units > 0 else 1
-                        p_type = unit_mapping[pid]['Type']
                         
-                        # 为了公平对比，全量对比柱状图默认扣除每个物业各自所有的这三项成本
-                        p_data_row = final_df[final_df['Property ID'] == pid].iloc[0]
+                        # 抓取该物业的账面成本
+                        p_data_row = clean_final_df[clean_final_df['Property ID'] == pid].iloc[0]
                         p_deduction = float(p_data_row.get('Tax', 0)) + float(p_data_row.get('Insurance', 0)) + float(p_data_row.get('Mortgage', 0))
                         
                         p_net_income = row['Rent'] - p_deduction
                         p_efficiency = p_net_income / p_units
                         
                         comparison_list.append({
-                            'Property ID': pid, 'Type': p_type, 'Efficiency': p_efficiency
+                            'Property ID': pid, 'Type': current_type, 'Efficiency': p_efficiency
                         })
                 
                 comp_df = pd.DataFrame(comparison_list)
@@ -1065,9 +1068,9 @@ else:
                         yaxis=dict(showgrid=False), font=dict(family="Inter, sans-serif", size=12)
                     )
                     st.plotly_chart(fig_comp, use_container_width=True, config={'displayModeBar': False})
-                    st.caption(f"💡 注：蓝色高亮柱状图为你当前选中的物业 **{prop_id}**。 对比基础为最新月份（{latest_target_month.strftime('%Y-%m')}）。")
+                    st.caption(f"💡 注：蓝色高亮柱状图为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current_type}** 类型。")
                 else:
-                    st.info("暂无足够的数据生成其他物业的效益对比。")
+                    st.info(f"暂无足够的数据生成其他 {current_type} 物业的效益对比。")
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
     
