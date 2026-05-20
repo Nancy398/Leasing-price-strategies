@@ -1049,41 +1049,78 @@ else:
                 
                 comp_df = pd.DataFrame(comparison_list)
                 if not comp_df.empty:
-                    # 💡 注意：为了让横向柱状图“最赚钱的排在最上面”，
-                    # Plotly 的横向图渲染顺序是从下往上画的，因此升序排列（ascending=True）在前端反而是最合理的。
-                    comp_df = comp_df.sort_values('Efficiency', ascending=True)
-                    colors = ['#3182CE' if x == prop_id else '#CBD5E0' for x in comp_df['Property ID']]
+                    # 1. 拆分正效益和负效益数据集
+                    positive_df = comp_df[comp_df['Efficiency'] >= 0].copy()
+                    negative_df = comp_df[comp_df['Efficiency'] < 0].copy()
 
-                    # 构建横向柱状图 (X是数值, Y是ID)
-                    fig_comp = go.Figure(go.Bar(
-                        x=comp_df['Efficiency'],
-                        y=comp_df['Property ID'],
-                        orientation='h',  # 🎯 锁定横向
-                        marker_color=colors,
-                        text=comp_df['Efficiency'].map('${:,.2f}'.format), 
-                        textposition='outside',
-                        customdata=comp_df['Type'],
-                        hovertemplate="<b>Property:</b> %{y}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
-                    ))
+                    # 2. 排序优化
+                    # 正效益：效益越高越好，Plotly横向图从下往上画，所以用升序，这样最高分在最上面
+                    positive_df = positive_df.sort_values('Efficiency', ascending=True)
+                    # 负效益：亏损越少越好（或亏损越多越显眼），这里用降序，让亏得最惨的排在最上面，警示效果最好
+                    negative_df = negative_df.sort_values('Efficiency', ascending=False)
 
-                    fig_comp.update_layout(
-                        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                        margin=dict(l=120, r=60, t=10, b=10), # 给左侧 Y 轴文字多腾出点空间
-                        height=max(200, len(comp_df) * 40), # 随物业数量动态自适应高度，防止撞字
-                        xaxis=dict(
-                            title="Efficiency ($ / Unit)", 
-                            tickformat='$,.0f', 
-                            gridcolor='#E2E8F0', 
-                            zeroline=True, 
-                            zerolinecolor='gray'
-                        ),
-                        yaxis=dict(showgrid=False), 
-                        font=dict(family="Inter, sans-serif", size=12)
-                    )
-                    st.plotly_chart(fig_comp, use_container_width=True, config={'displayModeBar': False})
-                    st.caption(f"💡 注：蓝色高亮柱状图为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current_type}** 类型。")
-                else:
-                    st.info(f"暂无足够的数据生成其他 {current_type} 物业的效益对比。")
+                    # 3. 创建 Streamlit 左右两栏布局
+                    col_chart_left, col_chart_right = st.columns(2)
+
+                    # ==========================================
+                    # 🟢 左侧：正效益物业对比 (Positive Efficiency)
+                    # ==========================================
+                    with col_chart_left:
+                        st.markdown("##### 🟢 Profit Ranking (正效益)")
+                        if not positive_df.empty:
+                            pos_colors = ['#2F855A' if x == prop_id else '#A0AEC0' for x in positive_df['Property ID']] # 当前物业用深绿高亮，其余灰色
+                            
+                            fig_pos = go.Figure(go.Bar(
+                                x=positive_df['Efficiency'],
+                                y=positive_df['Property ID'],
+                                orientation='h',
+                                marker_color=pos_colors,
+                                text=positive_df['Efficiency'].map('${:,.2f}'.format),
+                                textposition='outside',
+                                customdata=positive_df['Type'],
+                                hovertemplate="<b>Property:</b> %{y}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
+                            ))
+                            fig_pos.update_layout(
+                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                margin=dict(l=90, r=50, t=10, b=10),
+                                height=max(180, len(positive_df) * 40),
+                                xaxis=dict(title="Efficiency ($ / Unit)", tickformat='$,.0f', gridcolor='#E2E8F0'),
+                                yaxis=dict(showgrid=False), font=dict(family="Inter, sans-serif", size=11)
+                            )
+                            st.plotly_chart(fig_pos, use_container_width=True, config={'displayModeBar': False})
+                        else:
+                            st.info("大盘中暂无正效益的物业。")
+
+                    # ==========================================
+                    # 🔴 右侧：负效益物业对比 (Negative Efficiency)
+                    # ==========================================
+                    with col_chart_right:
+                        st.markdown("##### 🔴 Loss Warning (负效益)")
+                        if not negative_df.empty:
+                            neg_colors = ['#E53E3E' if x == prop_id else '#CBD5E0' for x in negative_df['Property ID']] # 当前物业用深红高亮，其余淡灰
+                            
+                            fig_neg = go.Figure(go.Bar(
+                                x=negative_df['Efficiency'],
+                                y=negative_df['Property ID'],
+                                orientation='h',
+                                marker_color=neg_colors,
+                                text=negative_df['Efficiency'].map('${:,.2f}'.format),
+                                textposition='outside',
+                                customdata=negative_df['Type'],
+                                hovertemplate="<b>Property:</b> %{y}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
+                            ))
+                            fig_neg.update_layout(
+                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                margin=dict(l=90, r=50, t=10, b=10),
+                                height=max(180, len(negative_df) * 40),
+                                xaxis=dict(title="Efficiency ($ / Unit)", tickformat='$,.0f', gridcolor='#E2E8F0'),
+                                yaxis=dict(showgrid=False), font=dict(family="Inter, sans-serif", size=11)
+                            )
+                            st.plotly_chart(fig_neg, use_container_width=True, config={'displayModeBar': False})
+                        else:
+                            st.success("🎉 太棒了！大盘中没有亏损的物业。")
+
+                    st.caption(f"💡 注：彩色高亮柱状图（绿色/红色）为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
     
