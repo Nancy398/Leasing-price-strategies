@@ -1038,7 +1038,7 @@ else:
                         
                         # 抓取该物业的账面成本
                         p_data_row = clean_final_df[clean_final_df['Property ID'] == pid].iloc[0]
-                        p_deduction = float(p_data_row.get('Tax', 0)) + float(p_data_row.get('Insurance', 0)) + float(p_data_row.get('Mortgage', 0))
+                        p_deduction = float(p_data_row.get('Tax', 0)) + float(p_data_row.get('Insurance', 0)) + float(p_data_row.get('Mortgage Loan Interest', 0))
                         
                         p_net_income = row['Rent'] - p_deduction
                         p_efficiency = p_net_income / p_units
