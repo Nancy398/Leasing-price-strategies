@@ -1120,7 +1120,7 @@ else:
                         else:
                             st.success("🎉 太棒了！大盘中没有亏损的物业。")
 
-                    st.caption(f"💡 注：彩色高亮柱状图（绿色/红色）为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current
+                    st.caption(f"💡 注：彩色高亮柱状图（绿色/红色）为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current_type}** 类型。")
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
     
