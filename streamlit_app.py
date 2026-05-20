@@ -8,6 +8,12 @@ from datetime import datetime, timedelta
 # from google.oauth2.service_account import Credentials
 # import gspread
 # from gspread_dataframe import set_with_dataframe
+st.set_page_config(
+    page_title="Property Management Dashboard",
+    page_icon="📊",
+    layout="wide",  #  就是这一行，让整体变成 Landscape 视觉
+    initial_sidebar_state="expanded"
+)
 
 # 1. 设置常量 (建议生产环境使用 st.secrets 或 环境变量)
 APP_ID = st.secrets["Larksuite"]["APP_ID"]
