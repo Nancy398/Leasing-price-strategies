@@ -7,3 +7,7 @@ backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F0F2F6"
 textColor = "#001F3F"
 font = "sans serif"
+
+[layout]
+# 锁定全局为宽屏横屏模式
+layout = "wide"
