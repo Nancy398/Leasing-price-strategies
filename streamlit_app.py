@@ -1049,26 +1049,25 @@ else:
                 
                 comp_df = pd.DataFrame(comparison_list)
                 if not comp_df.empty:
-                    # 【调整 1】改为降序排列，这样图表在视觉上会从左到右“由高到低”呈现
+                    # 降序排列，最高效益的排在最左侧
                     comp_df = comp_df.sort_values('Efficiency', ascending=False)
                     colors = ['#3182CE' if x == prop_id else '#CBD5E0' for x in comp_df['Property ID']]
 
-                    # 【调整 2】X轴和Y轴对调，去掉 orientation='h'
+                    # 构建纵向柱状图 (X是ID, Y是数值)
                     fig_comp = go.Figure(go.Bar(
-                        x=comp_df['Property ID'],  # X轴变成物业ID
-                        y=comp_df['Efficiency'],   # Y轴变成效益数值
+                        x=comp_df['Property ID'],
+                        y=comp_df['Efficiency'],
                         marker_color=colors,
                         text=comp_df['Efficiency'].map('${:,.2f}'.format), 
-                        textposition='outside',    # 文本会自动显示在柱子顶部
+                        textposition='outside',
                         customdata=comp_df['Type'],
                         hovertemplate="<b>Property:</b> %{x}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{y:$,.2f}/Unit<extra></extra>"
                     ))
 
-                    # 【调整 3】优化布局，高度固定，宽度自适应
                     fig_comp.update_layout(
                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                         margin=dict(l=50, r=50, t=30, b=50),
-                        height=400,  # 纵向图高度固定即可，宽度会随页面自动拉伸
+                        height=400, # 纵向图高度固定即可
                         yaxis=dict(
                             title="Efficiency ($ / Unit)", 
                             tickformat='$,.0f', 
@@ -1078,7 +1077,7 @@ else:
                         ),
                         xaxis=dict(
                             showgrid=False,
-                            tickangle=-45  # 💡 如果你的物业 ID 比较长，倾斜 45 度防止文字重叠
+                            tickangle=-45 # 防止物业多的时候底部名称打架，旋转45度
                         ), 
                         font=dict(family="Inter, sans-serif", size=12)
                     )
