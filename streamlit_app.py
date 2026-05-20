@@ -1018,7 +1018,7 @@ else:
                     st.metric(
                         label=f"Efficient ({latest_row['Month'].strftime('%Y-%m')})",
                         value=f"${latest_row['Efficiency']:,.2f} / Unit",
-                        delta=delta_str
+                        # delta=delta_str
                     )
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
