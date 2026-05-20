@@ -929,6 +929,7 @@ else:
             monthly_tax = float(prop_data.get('Tax', 0))
             monthly_insurance = float(prop_data.get('Insurance', 0))
             monthly_mortgage = float(prop_data.get('Mortgage Loan Interest', 0))
+            total_units = int(prop_data.get('Total Unit', 1))
             # 渲染成本扣除复选框
             col_bx1, col_bx2, col_bx3 = st.columns(3)
             with col_bx1:
