@@ -1021,6 +1021,7 @@ else:
 
                 latest_target_month = latest_row['Month']
                 all_rent_latest = mh_history_df[mh_history_df['Month'] == latest_target_month].copy()
+                st.dataframe(final_df)
                 unit_mapping = final_df.set_index('Property ID')[['Total Unit', 'Type']].to_dict('index')
                 
                 comparison_list = []
@@ -1066,22 +1067,6 @@ else:
                     st.caption(f"💡 注：蓝色高亮柱状图为你当前选中的物业 **{prop_id}**。 对比基础为最新月份（{latest_target_month.strftime('%Y-%m')}）。")
                 else:
                     st.info("暂无足够的数据生成其他物业的效益对比。")
-                
-                # ========================================================
-                # 后面紧接着原本 ML 独有的 DSCR 指标看板（不受影响）
-                # ========================================================
-                if current_type == "ML" and prop_data.get('Mortgage Loan Interest', 0) > 0:
-                    st.write("---")
-                    st.subheader("🏦 DSCR Analysis")
-                    col1, col2, col3 = st.columns([1.5, 1.5, 1])
-                    with col1:
-                        st.metric("DSCR", prop_data['DSCR'])
-                    with col2:
-                        dscr_rent = (((prop_data['Mortgage Loan Interest']*(prop_data['DSCR']-1)+prop_data['Total_Fixed']+prop_data['Total Unit']*50)/(1-prop_data['Variable_Rate']))-prop_data['Already_Leased_Rev'])/prop_data['Vacant_Units']
-                        st.metric("DSCR Rent", f"${dscr_rent:,.2f}")
-                    with col3:
-                        current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']+prop_data['Mortgage Loan Interest'])/prop_data['Mortgage Loan Interest']
-                        st.metric("Current DSCR", f"{current_dscr:.2f}")
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
     
