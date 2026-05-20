@@ -926,8 +926,6 @@ else:
                 use_container_width=True
             )
             st.write(f"### 📈 {prop_id} Historical Rent & Net Income ({current_type})")
-            st.write("勾选下方项以在折线图中扣除并计算 Net Income：")
-            st.dataframe(prop_data)
             monthly_tax = float(prop_data.get('Tax', 0))
             monthly_insurance = float(prop_data.get('Insurance', 0))
             monthly_mortgage = float(prop_data.get('Mortgage Loan Interest', 0))
@@ -939,8 +937,6 @@ else:
                 include_insurance = st.checkbox(f"Insurance (${monthly_insurance:,.2f}/月)", value=False, key=f"ins_{prop_id}")
             with col_bx3:
                 include_mortgage = st.checkbox(f"Mortgage (${monthly_mortgage:,.2f}/月)", value=False, key=f"mort_{prop_id}")
-
-            st.write(f"### 📈 {prop_id} Historical Rent & Net Income ({current_type})")
 
             # 统一读取 PropertyRent.csv（确保里面包含该 ML/MH 的 ID 历史数据）
             mh_history_df = pd.read_csv("PropertyRent.csv")
@@ -957,6 +953,7 @@ else:
 
                 # 生成动态 Net Income
                 prop_mh_history['Net Income'] = prop_mh_history['Rent'] - total_deduction
+                prop_mh_history['Efficiency'] = prop_mh_history['Net Income'] / total_units
 
                 # 创建 Plotly 图表
                 fig_mh = go.Figure()
@@ -1003,10 +1000,25 @@ else:
                 # 显示最新月份的快速看板
                 latest_row = prop_mh_history.iloc[-1]
                 st.metric(
-                    label=f"最新月份净利润 Net Income ({latest_row['Month'].strftime('%Y-%m')})", 
-                    value=f"${latest_row['Net Income']:,.2f}",
-                    delta=f"-${total_deduction:,.2f} Costs Deducted" if total_deduction > 0 else "Gross Rent"
+                    label=f"Latest Net Income ({latest_row['Month'].strftime('%Y-%m')})", 
+                    value=f"${latest_row['Net Income']:,.2f}"
                 )
+                latest_row = prop_mh_history.iloc[-1]
+                
+                col_metric1, col_metric2 = st.columns(2)
+                with col_metric1:
+                    st.metric(
+                        label=f"Latest Net Income ({latest_row['Month'].strftime('%Y-%m')})", 
+                        value=f"${latest_row['Net Income']:,.2f}",
+                        # delta=f"-${total_deduction:,.2f} 成本已扣除" if total_deduction > 0 else "Gross Rent"
+                    )
+                with col_metric2:
+
+                    st.metric(
+                        label=f"Efficient ({latest_row['Month'].strftime('%Y-%m')})",
+                        value=f"${latest_row['Efficiency']:,.2f} / Unit",
+                        delta=delta_str
+                    )
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
     
