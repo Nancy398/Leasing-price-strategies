@@ -1054,7 +1054,7 @@ else:
 
                     fig_comp = go.Figure(go.Bar(
                         x=comp_df['Efficiency'], y=comp_df['Property ID'],
-                        orientation='h', marker_color=colors,
+                        orientation='v', marker_color=colors,
                         text=comp_df['Efficiency'].map('${:,.2f}'.format), textposition='outside',
                         customdata=comp_df['Type'],
                         hovertemplate="<b>Property:</b> %{y}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
