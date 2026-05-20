@@ -1049,36 +1049,35 @@ else:
                 
                 comp_df = pd.DataFrame(comparison_list)
                 if not comp_df.empty:
-                    # 降序排列，最高效益的排在最左侧
-                    comp_df = comp_df.sort_values('Efficiency', ascending=False)
+                    # 💡 注意：为了让横向柱状图“最赚钱的排在最上面”，
+                    # Plotly 的横向图渲染顺序是从下往上画的，因此升序排列（ascending=True）在前端反而是最合理的。
+                    comp_df = comp_df.sort_values('Efficiency', ascending=True)
                     colors = ['#3182CE' if x == prop_id else '#CBD5E0' for x in comp_df['Property ID']]
 
-                    # 构建纵向柱状图 (X是ID, Y是数值)
+                    # 构建横向柱状图 (X是数值, Y是ID)
                     fig_comp = go.Figure(go.Bar(
-                        x=comp_df['Property ID'],
-                        y=comp_df['Efficiency'],
+                        x=comp_df['Efficiency'],
+                        y=comp_df['Property ID'],
+                        orientation='h',  # 🎯 锁定横向
                         marker_color=colors,
                         text=comp_df['Efficiency'].map('${:,.2f}'.format), 
                         textposition='outside',
                         customdata=comp_df['Type'],
-                        hovertemplate="<b>Property:</b> %{x}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{y:$,.2f}/Unit<extra></extra>"
+                        hovertemplate="<b>Property:</b> %{y}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
                     ))
 
                     fig_comp.update_layout(
                         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                        margin=dict(l=50, r=50, t=30, b=50),
-                        height=400, # 纵向图高度固定即可
-                        yaxis=dict(
+                        margin=dict(l=120, r=60, t=10, b=10), # 给左侧 Y 轴文字多腾出点空间
+                        height=max(200, len(comp_df) * 40), # 随物业数量动态自适应高度，防止撞字
+                        xaxis=dict(
                             title="Efficiency ($ / Unit)", 
                             tickformat='$,.0f', 
                             gridcolor='#E2E8F0', 
                             zeroline=True, 
                             zerolinecolor='gray'
                         ),
-                        xaxis=dict(
-                            showgrid=False,
-                            tickangle=-45 # 防止物业多的时候底部名称打架，旋转45度
-                        ), 
+                        yaxis=dict(showgrid=False), 
                         font=dict(family="Inter, sans-serif", size=12)
                     )
                     st.plotly_chart(fig_comp, use_container_width=True, config={'displayModeBar': False})
