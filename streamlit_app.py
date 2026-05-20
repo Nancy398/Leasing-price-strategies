@@ -1000,11 +1000,6 @@ else:
 
                 # 显示最新月份的快速看板
                 latest_row = prop_mh_history.iloc[-1]
-                st.metric(
-                    label=f"Latest Net Income ({latest_row['Month'].strftime('%Y-%m')})", 
-                    value=f"${latest_row['Net Income']:,.2f}"
-                )
-                latest_row = prop_mh_history.iloc[-1]
                 
                 col_metric1, col_metric2 = st.columns(2)
                 with col_metric1:
@@ -1020,6 +1015,73 @@ else:
                         value=f"${latest_row['Efficiency']:,.2f} / Unit",
                         # delta=delta_str
                     )
+                st.write("---")
+                st.subheader("📊 Portfolio Efficiency Comparison (Latest Month)")
+                st.write("对比当前所有 MH / ML 物业在最新月份的单房效益（Net Income / Total Unit）：")
+
+                latest_target_month = latest_row['Month']
+                all_rent_latest = mh_history_df[mh_history_df['Month'] == latest_target_month].copy()
+                unit_mapping = final_df.set_index('Property ID')[['Total Unit', 'Type']].to_dict('index')
+                
+                comparison_list = []
+                for idx, row in all_rent_latest.iterrows():
+                    pid = row['PropertyID']
+                    if pid in unit_mapping and unit_mapping[pid]['Type'] in ['MH', 'ML']:
+                        p_units = int(unit_mapping[pid]['Total Unit'])
+                        p_units = p_units if p_units > 0 else 1
+                        p_type = unit_mapping[pid]['Type']
+                        
+                        # 为了公平对比，全量对比柱状图默认扣除每个物业各自所有的这三项成本
+                        p_data_row = final_df[final_df['Property ID'] == pid].iloc[0]
+                        p_deduction = float(p_data_row.get('Tax', 0)) + float(p_data_row.get('Insurance', 0)) + float(p_data_row.get('Mortgage', 0))
+                        
+                        p_net_income = row['Rent'] - p_deduction
+                        p_efficiency = p_net_income / p_units
+                        
+                        comparison_list.append({
+                            'Property ID': pid, 'Type': p_type, 'Efficiency': p_efficiency
+                        })
+                
+                comp_df = pd.DataFrame(comparison_list)
+                if not comp_df.empty:
+                    comp_df = comp_df.sort_values('Efficiency', ascending=True)
+                    colors = ['#3182CE' if x == prop_id else '#CBD5E0' for x in comp_df['Property ID']]
+
+                    fig_comp = go.Figure(go.Bar(
+                        x=comp_df['Efficiency'], y=comp_df['Property ID'],
+                        orientation='h', marker_color=colors,
+                        text=comp_df['Efficiency'].map('${:,.2f}'.format), textposition='outside',
+                        customdata=comp_df['Type'],
+                        hovertemplate="<b>Property:</b> %{y}<br><b>Type:</b> %{customdata}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
+                    ))
+
+                    fig_comp.update_layout(
+                        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        margin=dict(l=100, r=50, t=10, b=10),
+                        height=max(200, len(comp_df) * 40),
+                        xaxis=dict(title="Efficiency ($ / Unit)", tickformat='$,.0f', gridcolor='#E2E8F0', zeroline=True, zerolinecolor='gray'),
+                        yaxis=dict(showgrid=False), font=dict(family="Inter, sans-serif", size=12)
+                    )
+                    st.plotly_chart(fig_comp, use_container_width=True, config={'displayModeBar': False})
+                    st.caption(f"💡 注：蓝色高亮柱状图为你当前选中的物业 **{prop_id}**。 对比基础为最新月份（{latest_target_month.strftime('%Y-%m')}）。")
+                else:
+                    st.info("暂无足够的数据生成其他物业的效益对比。")
+                
+                # ========================================================
+                # 后面紧接着原本 ML 独有的 DSCR 指标看板（不受影响）
+                # ========================================================
+                if current_type == "ML" and prop_data.get('Mortgage Loan Interest', 0) > 0:
+                    st.write("---")
+                    st.subheader("🏦 DSCR Analysis")
+                    col1, col2, col3 = st.columns([1.5, 1.5, 1])
+                    with col1:
+                        st.metric("DSCR", prop_data['DSCR'])
+                    with col2:
+                        dscr_rent = (((prop_data['Mortgage Loan Interest']*(prop_data['DSCR']-1)+prop_data['Total_Fixed']+prop_data['Total Unit']*50)/(1-prop_data['Variable_Rate']))-prop_data['Already_Leased_Rev'])/prop_data['Vacant_Units']
+                        st.metric("DSCR Rent", f"${dscr_rent:,.2f}")
+                    with col3:
+                        current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']+prop_data['Mortgage Loan Interest'])/prop_data['Mortgage Loan Interest']
+                        st.metric("Current DSCR", f"{current_dscr:.2f}")
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
     
