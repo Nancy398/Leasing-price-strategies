@@ -866,6 +866,9 @@ else:
                     # 逻辑: (Already_Leased_Rev * (1-MgmtRate)) - (LeasedUnits * 50) - FixedCost
                     current_dscr = (prop_data['Already_Leased_Rev']*prop_data['Denominator'] - prop_data['Leased_Units']*50 - prop_data['Total_Fixed']+prop_data['Mortgage Loan Interest'])/prop_data['Mortgage Loan Interest']
                     st.metric("Current DSCR", f"{current_dscr:.2f}")
+
+                with col4:
+                    st.metric("Already_Leased_Rev", prop_data['Already_Leased_Rev'])
             
 
             
