@@ -853,7 +853,7 @@ else:
                 # 这样它显示的就是刚刚算好的最新 target_price
                 st.metric("目标租金 (Target)", f"${target_price:,.2f}")
             if prop_data['Mortgage Loan Interest'] > 0:
-                col1, col2, col3 = st.columns([1.5, 1.5, 1])
+                col1, col2, col3,col4= st.columns([1, 1, 1,1])
                 with col1:
                     st.metric("DSCR", prop_data['DSCR'])
                 
@@ -868,9 +868,9 @@ else:
                     st.metric("Current DSCR", f"{current_dscr:.2f}")
 
                 with col4:
-                    st.metric("Already_Leased_Rev", prop_data['Already_Leased_Rev'])
+                    already_rev = prop_data['Already_Leased_Rev']
+                    st.metric("Already_Leased_Rev",f"{already_rev:.2f}" )
             
-
             
             # --- 3. 出租率仪表盘 ---
             # --- 3. 出租率仪表盘 (蓝色调版) ---
