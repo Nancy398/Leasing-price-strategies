@@ -869,7 +869,7 @@ else:
 
                 with col4:
                     already_rev = prop_data['Already_Leased_Rev']
-                    st.metric("Already_Leased_Rev",f"{already_rev:.2f}" )
+                    st.metric("Already_Leased_Rev",f"{already_rev:,.2f}" )
             
             
             # --- 3. 出租率仪表盘 ---
