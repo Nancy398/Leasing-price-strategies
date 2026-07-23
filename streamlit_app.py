@@ -1182,7 +1182,7 @@ else:
 
                     # 3. 折叠表格定义 (放在计算逻辑前，用于捕获用户的勾选状态)
                     with st.expander("🔍 点击展开勾选具体的 MH 亏损物业", expanded=False):
-                        st.write("💡 在下方列表中**勾选/取消勾选**具体物业，上方的 **[已勾选物业亏损]** 指标卡片会实时更新：")
+                        st.write("💡 在下方列表中**勾选/取消勾选**具体物业：")
 
                         display_loss_df = mh_loss_df[['Property ID', 'Company', 'Total Unit', 'Vacant_Units', 'Est_NOI']].copy()
                         display_loss_df = display_loss_df.sort_values('Est_NOI', ascending=True)
