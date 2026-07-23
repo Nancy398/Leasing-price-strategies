@@ -531,7 +531,14 @@ else:
         col1, col2, col3,col4 = st.columns(4)
         
         with col1:
-            st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+            vacant = int(prop_data['Vacant_Units'])
+            total = int(prop_data['Total Unit'])  # 假设你的列名是 Total_Units
+            
+            # 页面上会直接大字显示，例如：15 / 100
+            st.metric(
+                label="空置房间 (Vacant)", 
+                value=f"{vacant} / {total}"
+            )
         
         with col2:
             st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:,.2f}")
@@ -629,7 +636,14 @@ else:
         col1, col2, col3,col4 = st.columns(4)
         
         with col1:
-            st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+            vacant = int(prop_data['Vacant_Units'])
+            total = int(prop_data['Total Unit'])  # 假设你的列名是 Total_Units
+            
+            # 页面上会直接大字显示，例如：15 / 100
+            st.metric(
+                label="空置房间 (Vacant)", 
+                value=f"{vacant} / {total}"
+            )
         
         with col2:
             st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:,.2f}")
@@ -827,7 +841,15 @@ else:
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                st.metric("空置房间 (Vacant)", int(prop_data['Vacant_Units']))
+                vacant = int(prop_data['Vacant_Units'])
+                total = int(prop_data['Total Unit'])  # 假设你的列名是 Total_Units
+                
+                # 页面上会直接大字显示，例如：15 / 100
+                st.metric(
+                    label="空置房间 (Vacant)", 
+                    value=f"{vacant} / {total}"
+                )
+        
             
             with col2:
                 st.metric("保本租金 (Breakeven)", f"${prop_data['Breakeven_Rent']:,.2f}")
