@@ -1155,7 +1155,7 @@ else:
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
 
-                    st.write("---")
+            st.write("---")
             st.subheader("⚠️ Loss Analysis & Negative NOI Summary")
 
             # 1. 计算 final_df 中每个物业当前的预计 NOI (Est_NOI)
