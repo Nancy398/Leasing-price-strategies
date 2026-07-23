@@ -1173,54 +1173,74 @@ else:
                 mh_loss_df = mh_df[mh_df['Est_NOI'] < 0].copy()
 
                 if not mh_loss_df.empty:
-                    st.write("💡 在下方列表中**勾选/取消勾选**具体物业，上方指标卡片会**实时更新勾选项的加总金额**：")
+                    # 计算基础全盘 MH 亏损
+                    total_mh_loss = mh_loss_df['Est_NOI'].sum()
+                    loss_count = len(mh_loss_df)
 
-                    # 整理要显示的列，并默认添加一列复选框 'Select'（默认全选 True）
-                    display_loss_df = mh_loss_df[['Property ID', 'Company', 'Total Unit', 'Vacant_Units', 'Est_NOI']].copy()
-                    display_loss_df = display_loss_df.sort_values('Est_NOI', ascending=True)
-                    display_loss_df.insert(0, 'Select', True)  # 默认全选
+                    # 当前选中物业的 NOI 计算
+                    current_prop_noi = prop_data['Already_Leased_Rev'] * prop_data['Denominator'] - prop_data['Leased_Units'] * 50 - prop_data['Total_Fixed']
 
-                    # 使用 st.data_editor 渲染可编辑/勾选表格
-                    edited_df = st.data_editor(
-                        display_loss_df,
-                        column_config={
-                            "Select": st.column_config.CheckboxColumn(
-                                "选择",
-                                help="勾选以纳入加总计算",
-                                default=True,
-                            ),
-                            "Property ID": "Property ID",
-                            "Company": "Company",
-                            "Total Unit": st.column_config.NumberColumn("Total Unit", format="%d"),
-                            "Vacant_Units": st.column_config.NumberColumn("Vacant Units", format="%d"),
-                            "Est_NOI": st.column_config.NumberColumn("Estimated NOI", format="$%.2f")
-                        },
-                        disabled=["Property ID", "Company", "Total Unit", "Vacant_Units", "Est_NOI"], # 只有 Select 可勾选，其他列禁用修改
-                        hide_index=True,
-                        use_container_width=True,
-                        key="mh_loss_editor"
-                    )
+                    # 3. 折叠表格定义 (放在计算逻辑前，用于捕获用户的勾选状态)
+                    with st.expander("🔍 点击展开勾选具体的 MH 亏损物业", expanded=False):
+                        st.write("💡 在下方列表中**勾选/取消勾选**具体物业，上方的 **[已勾选物业亏损]** 指标卡片会实时更新：")
 
-                    # 3. 获取勾选的行，并计算动态加总
+                        display_loss_df = mh_loss_df[['Property ID', 'Company', 'Total Unit', 'Vacant_Units', 'Est_NOI']].copy()
+                        display_loss_df = display_loss_df.sort_values('Est_NOI', ascending=True)
+                        display_loss_df.insert(0, 'Select', True)  # 默认全选
+
+                        edited_df = st.data_editor(
+                            display_loss_df,
+                            column_config={
+                                "Select": st.column_config.CheckboxColumn("选择", help="勾选以纳入所选加总", default=True),
+                                "Property ID": "Property ID",
+                                "Company": "Company",
+                                "Total Unit": st.column_config.NumberColumn("Total Unit", format="%d"),
+                                "Vacant_Units": st.column_config.NumberColumn("Vacant Units", format="%d"),
+                                "Est_NOI": st.column_config.NumberColumn("Estimated NOI", format="$%.2f")
+                            },
+                            disabled=["Property ID", "Company", "Total Unit", "Vacant_Units", "Est_NOI"],
+                            hide_index=True,
+                            use_container_width=True,
+                            key="mh_loss_editor"
+                        )
+
+                    # 4. 获取勾选行数据并计算动态加总
                     selected_rows = edited_df[edited_df['Select'] == True]
                     selected_loss_total = selected_rows['Est_NOI'].sum()
                     selected_count = len(selected_rows)
 
-                    # 展示勾选加总指标
-                    m_col1, m_col2 = st.columns(2)
+                    # 5. 上方展示 3 个关键指标卡片 (放在折叠框之前或之后渲染均可，通过 container 保持在最上方)
+                    m_col1, m_col2, m_col3 = st.columns(3)
+                    
                     with m_col1:
                         st.metric(
-                            label="已勾选 MH 物业亏损加总", 
-                            value=f"${selected_loss_total:,.2f}",
-                            delta=f"已选中 {selected_count} / {len(mh_loss_df)} 个物业",
+                            label="MH 预计总亏损", 
+                            value=f"${total_mh_loss:,.2f}",
+                            delta=f"{loss_count} 个亏损 MH 物业",
                             delta_color="inverse"
                         )
+                    
                     with m_col2:
-                        avg_selected = (selected_loss_total / selected_count) if selected_count > 0 else 0
+                        if current_type == 'MH' and current_prop_noi < 0:
+                            st.metric(
+                                label=f"当前物业 ({prop_id}) 亏损", 
+                                value=f"${current_prop_noi:,.2f}",
+                                delta="处于亏损状态",
+                                delta_color="inverse"
+                            )
+                        else:
+                            st.metric(
+                                label=f"当前物业 ({prop_id}) 状态", 
+                                value=f"${current_prop_noi:,.2f}",
+                                delta="非亏损 MH" if current_type == 'MH' else f"非 MH 类型 ({current_type})",
+                                delta_color="normal"
+                            )
+
+                    with m_col3:
                         st.metric(
-                            label="已勾选物业平均亏损", 
-                            value=f"${avg_selected:,.2f}",
-                            delta="平均单物业",
+                            label="所选物业亏损 (勾选加总)", 
+                            value=f"${selected_loss_total:,.2f}",
+                            delta=f"已选 {selected_count} / {loss_count} 个",
                             delta_color="inverse"
                         )
 
