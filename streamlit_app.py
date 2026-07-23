@@ -1155,62 +1155,62 @@ else:
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
 
-                st.write("---")
-                st.subheader("⚠️ MH Portfolio Loss Analysis (Negative NOI)")
-    
-                # 1. 仅筛选 Type 为 'MH' 的物业
-                mh_df = final_df[final_df['Type'] == 'MH'].copy()
-    
-                if not mh_df.empty:
-                    # 计算预计 NOI: (Already_Leased_Rev * Denominator) - (Leased_Units * 50) - Total_Fixed
-                    mh_df['Est_NOI'] = (
-                        mh_df['Already_Leased_Rev'] * mh_df['Denominator'] 
-                        - mh_df['Leased_Units'] * 50 
-                        - mh_df['Total_Fixed']
-                    )
-    
-                    # 2. 筛选出 MH 中预计 NOI < 0 的亏损物业
-                    mh_loss_df = mh_df[mh_df['Est_NOI'] < 0].copy()
-    
-                    if not mh_loss_df.empty:
-                        # 计算 MH 总亏损额与亏损物业数
-                        total_mh_loss = mh_loss_df['Est_NOI'].sum()
-                        loss_count = len(mh_loss_df)
-    
-                        # 指牌展示
-                        m_col1, m_col2 = st.columns(2)
-                        with m_col1:
-                            st.metric(
-                                label="MH 类型预计总亏损 (Total Negative NOI)", 
-                                value=f"${total_mh_loss:,.2f}",
-                                delta=f"{loss_count} 个亏损 MH 物业",
-                                delta_color="inverse"
-                            )
-                        with m_col2:
-                            st.metric(
-                                label="MH 亏损物业平均亏损额", 
-                                value=f"${(total_mh_loss / loss_count):,.2f}",
-                                delta="平均单物业",
-                                delta_color="inverse"
-                            )
-    
-                        # 亏损明细清单
-                        with st.expander("🔍 点击查看所有预计 NOI 为负的 MH 物业明细清单"):
-                            display_loss_df = mh_loss_df[['Property ID', 'Company', 'Total Unit', 'Vacant_Units', 'Est_NOI']].copy()
-                            display_loss_df = display_loss_df.sort_values('Est_NOI', ascending=True) # 亏损最多（负值最大）排在最前
-                            
-                            st.dataframe(
-                                display_loss_df.style.format({
-                                    'Est_NOI': "${:,.2f}",
-                                    'Total Unit': "{:,.0f}",
-                                    'Vacant_Units': "{:,.0f}"
-                                }).background_gradient(subset=['Est_NOI'], cmap='Reds_r'),
-                                use_container_width=True
-                            )
-                    else:
-                        st.success("🎉 MH 类型物业表现优异！当前没有任何预计 NOI 为负数的亏损物业。")
+            st.write("---")
+            st.subheader("⚠️ MH Portfolio Loss Analysis (Negative NOI)")
+
+            # 1. 仅筛选 Type 为 'MH' 的物业
+            mh_df = final_df[final_df['Type'] == 'MH'].copy()
+
+            if not mh_df.empty:
+                # 计算预计 NOI: (Already_Leased_Rev * Denominator) - (Leased_Units * 50) - Total_Fixed
+                mh_df['Est_NOI'] = (
+                    mh_df['Already_Leased_Rev'] * mh_df['Denominator'] 
+                    - mh_df['Leased_Units'] * 50 
+                    - mh_df['Total_Fixed']
+                )
+
+                # 2. 筛选出 MH 中预计 NOI < 0 的亏损物业
+                mh_loss_df = mh_df[mh_df['Est_NOI'] < 0].copy()
+
+                if not mh_loss_df.empty:
+                    # 计算 MH 总亏损额与亏损物业数
+                    total_mh_loss = mh_loss_df['Est_NOI'].sum()
+                    loss_count = len(mh_loss_df)
+
+                    # 指牌展示
+                    m_col1, m_col2 = st.columns(2)
+                    with m_col1:
+                        st.metric(
+                            label="MH 类型预计总亏损 (Total Negative NOI)", 
+                            value=f"${total_mh_loss:,.2f}",
+                            delta=f"{loss_count} 个亏损 MH 物业",
+                            delta_color="inverse"
+                        )
+                    with m_col2:
+                        st.metric(
+                            label="MH 亏损物业平均亏损额", 
+                            value=f"${(total_mh_loss / loss_count):,.2f}",
+                            delta="平均单物业",
+                            delta_color="inverse"
+                        )
+
+                    # 亏损明细清单
+                    with st.expander("🔍 点击查看所有预计 NOI 为负的 MH 物业明细清单"):
+                        display_loss_df = mh_loss_df[['Property ID', 'Company', 'Total Unit', 'Vacant_Units', 'Est_NOI']].copy()
+                        display_loss_df = display_loss_df.sort_values('Est_NOI', ascending=True) # 亏损最多（负值最大）排在最前
+                        
+                        st.dataframe(
+                            display_loss_df.style.format({
+                                'Est_NOI': "${:,.2f}",
+                                'Total Unit': "{:,.0f}",
+                                'Vacant_Units': "{:,.0f}"
+                            }).background_gradient(subset=['Est_NOI'], cmap='Reds_r'),
+                            use_container_width=True
+                        )
                 else:
-                    st.info("数据集中暂未找到 Type 为 'MH' 的物业数据。")
+                    st.success("🎉 MH 类型物业表现优异！当前没有任何预计 NOI 为负数的亏损物业。")
+            else:
+                st.info("数据集中暂未找到 Type 为 'MH' 的物业数据。")
                 
     
 
