@@ -1154,6 +1154,81 @@ else:
                     st.caption(f"💡 注：彩色高亮柱状图（绿色/红色）为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current_type}** 类型。")
             else:
                 st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
+
+                    st.write("---")
+            st.subheader("⚠️ Loss Analysis & Negative NOI Summary")
+
+            # 1. 计算 final_df 中每个物业当前的预计 NOI (Est_NOI)
+            # 根据你之前的逻辑：(Already_Leased_Rev * Denominator) - (Leased_Units * 50) - Total_Fixed
+            temp_df = final_df.copy()
+            temp_df['Est_NOI'] = (
+                temp_df['Already_Leased_Rev'] * temp_df['Denominator'] 
+                - temp_df['Leased_Units'] * 50 
+                - temp_df['Total_Fixed']
+            )
+
+            # 2. 筛选出预计 NOI < 0 的亏损物业
+            loss_df = temp_df[temp_df['Est_NOI'] < 0].copy()
+
+            if not loss_df.empty:
+                # 计算全盘负值加总及亏损物业数量
+                total_loss_amount = loss_df['Est_NOI'].sum()
+                loss_count = len(loss_df)
+                
+                # 计算当前选中类型 (current_type) 的亏损加总
+                type_loss_df = loss_df[loss_df['Type'] == current_type]
+                type_loss_amount = type_loss_df['Est_NOI'].sum() if not type_loss_df.empty else 0
+
+                # 展示核心指标卡片
+                sum_col1, sum_col2, sum_col3 = st.columns(3)
+                with sum_col1:
+                    st.metric(
+                        label="全盘预计总亏损 (Total Negative NOI)", 
+                        value=f"${total_loss_amount:,.2f}",
+                        delta=f"{loss_count} 个亏损物业",
+                        delta_color="inverse"
+                    )
+                with sum_col2:
+                    st.metric(
+                        label=f"{current_type} 类型总亏损", 
+                        value=f"${type_loss_amount:,.2f}",
+                        delta=f"{len(type_loss_df)} 个亏损物业",
+                        delta_color="inverse"
+                    )
+                with sum_col3:
+                    # 如果当前选中的物业本身也处于亏损状态，额外凸显提示
+                    current_prop_noi = prop_data['Already_Leased_Rev'] * prop_data['Denominator'] - prop_data['Leased_Units'] * 50 - prop_data['Total_Fixed']
+                    if current_prop_noi < 0:
+                        st.metric(
+                            label=f"当前物业 ({prop_id}) 预计亏损", 
+                            value=f"${current_prop_noi:,.2f}",
+                            delta="需重点关注",
+                            delta_color="inverse"
+                        )
+                    else:
+                        st.metric(
+                            label=f"当前物业 ({prop_id}) 状态", 
+                            value=f"${current_prop_noi:,.2f}",
+                            delta="盈利中",
+                            delta_color="normal"
+                        )
+
+                # 下方展开明细表格，列出所有亏损物业
+                with st.expander("🔍 点击查看所有预计 NOI 为负的物业明细清单"):
+                    display_loss_df = loss_df[['Property ID', 'Type', 'Company', 'Total Unit', 'Vacant_Units', 'Est_NOI']].copy()
+                    display_loss_df = display_loss_df.sort_values('Est_NOI', ascending=True) # 亏损最多的排在前面
+                    
+                    st.dataframe(
+                        display_loss_df.style.format({
+                            'Est_NOI': "${:,.2f}",
+                            'Total Unit': "{:,.0f}",
+                            'Vacant_Units': "{:,.0f}"
+                        }).background_gradient(subset=['Est_NOI'], cmap='Reds_r'),
+                        use_container_width=True
+                    )
+            else:
+                st.success("🎉 大盘表现优异！当前没有任何预计 NOI 为负数的亏损物业。")
+                
     
 
 # --- 底部版权标 (Footer) ---
