@@ -1251,7 +1251,7 @@ else:
                 st.write("") # 间距
             
                 # 4. 使用 Tabs 分开展现【盈利榜】与【亏损分析】
-                tab_profit, tab_loss = st.tabs(["🟢 MH 盈利榜 (Profit)", "🔴 MH 亏损分析 (Loss Warning)"])
+                tab_profit, tab_loss = st.tabs(["🟢 MH Profit", "🔴 MH Loss Warning"])
             
                 # ==========================================
                 # 🟢 TAB 1: MH 盈利榜
@@ -1274,7 +1274,7 @@ else:
                                     "Company": "Company",
                                     "Total Unit": st.column_config.NumberColumn("Total Unit", format="%d"),
                                     "Vacant_Units": st.column_config.NumberColumn("Vacant Units", format="%d"),
-                                    "Est_NOI": st.column_config.NumberColumn("Estimated NOI", format="$%.2f")
+                                    "Est_NOI": st.column_config.NumberColumn("Estimated NOI", format="$%,.2f")
                                 },
                                 disabled=["Property ID", "Company", "Total Unit", "Vacant_Units", "Est_NOI"],
                                 hide_index=True,
@@ -1312,7 +1312,7 @@ else:
                                     "Company": "Company",
                                     "Total Unit": st.column_config.NumberColumn("Total Unit", format="%d"),
                                     "Vacant_Units": st.column_config.NumberColumn("Vacant Units", format="%d"),
-                                    "Est_NOI": st.column_config.NumberColumn("Estimated NOI", format="$%.2f")
+                                    "Est_NOI": st.column_config.NumberColumn("Estimated NOI", format="$%,.2f")
                                 },
                                 disabled=["Property ID", "Company", "Total Unit", "Vacant_Units", "Est_NOI"],
                                 hide_index=True,
