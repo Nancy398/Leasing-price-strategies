@@ -1047,13 +1047,35 @@ else:
                         # delta=delta_str
                     )
                 st.write("---")
-                # 动态显示标题，如：📊 MH Portfolio Efficiency Comparison
-                st.subheader(f"📊 {current_type} Portfolio Efficiency Comparison (Latest Month)")
-                st.write(f"对比当前大盘中所有 **{current_type}** 物业在最新月份的单房效益（Net Income / Total Unit）：")
 
+                # 1. 使用 Streamlit 原生分段选择控件 (st.segmented_control)
+                metric_choice = st.segmented_control(
+                    "切换对比指标 (Select Metric):",
+                    options=["Efficiency (单房效益)", "Net Income (净收益)"],
+                    default="Efficiency (单房效益)",
+                    key=f"metric_choice_{prop_id}"
+                )
+                
+                # 防止用户取消选中（segmented_control 允许反选清空），若为空则默认恢复 Efficiency
+                if not metric_choice:
+                    metric_choice = "Efficiency (单房效益)"
+                
+                # 根据用户选择设定核心变量
+                is_efficiency = "Efficiency" in metric_choice
+                metric_col = 'Efficiency' if is_efficiency else 'Net Income'
+                metric_label = 'Efficiency ($ / Unit)' if is_efficiency else 'Net Income ($)'
+                hover_label = 'Efficiency' if is_efficiency else 'Net Income'
+                
+                # 动态显示标题与说明
+                st.subheader(f"📊 {current_type} Portfolio {metric_col} Comparison (Latest Month)")
+                if is_efficiency:
+                    st.write(f"对比当前大盘中所有 **{current_type}** 物业在最新月份的单房效益（Net Income / Total Unit）：")
+                else:
+                    st.write(f"对比当前大盘中所有 **{current_type}** 物业在最新月份的总净收益（Net Income = Rent - Cost）：")
+                
                 latest_target_month = latest_row['Month']
                 all_rent_latest = mh_history_df[mh_history_df['Month'] == latest_target_month].copy()
-
+                
                 # 确保 Property ID 唯一
                 clean_final_df = final_df.drop_duplicates(subset=['Property ID'])
                 unit_mapping = clean_final_df.set_index('Property ID')[['Total Unit', 'Type']].to_dict('index')
@@ -1062,7 +1084,7 @@ else:
                 for idx, row in all_rent_latest.iterrows():
                     pid = row['PropertyID']
                     
-                    # 【核心修改点】：不仅要检查存在性，还要严格限制 type 必须等于当前选中的 current_type (MH 或 ML)
+                    # 严格限制 type 必须等于当前选中的 current_type (MH 或 ML)
                     if pid in unit_mapping and unit_mapping[pid]['Type'] == current_type:
                         p_units = int(unit_mapping[pid]['Total Unit'])
                         p_units = p_units if p_units > 0 else 1
@@ -1075,85 +1097,88 @@ else:
                         p_efficiency = p_net_income / p_units
                         
                         comparison_list.append({
-                            'Property ID': pid, 'Type': current_type, 'Efficiency': p_efficiency
+                            'Property ID': pid, 
+                            'Type': current_type, 
+                            'Efficiency': p_efficiency,
+                            'Net Income': p_net_income
                         })
                 
                 comp_df = pd.DataFrame(comparison_list)
                 if not comp_df.empty:
-                    # 1. 拆分正效益和负效益数据集
-                    positive_df = comp_df[comp_df['Efficiency'] >= 0].copy()
-                    negative_df = comp_df[comp_df['Efficiency'] < 0].copy()
-
+                    # 1. 拆分正负指标数据集（根据当前选中的 metric_col 判定）
+                    positive_df = comp_df[comp_df[metric_col] >= 0].copy()
+                    negative_df = comp_df[comp_df[metric_col] < 0].copy()
+                
                     # 2. 排序优化
-                    # 正效益：效益越高越好，Plotly横向图从下往上画，所以用升序，这样最高分在最上面
-                    positive_df = positive_df.sort_values('Efficiency', ascending=True)
-                    # 负效益：亏损越少越好（或亏损越多越显眼），这里用降序，让亏得最惨的排在最上面，警示效果最好
-                    negative_df = negative_df.sort_values('Efficiency', ascending=False)
-
+                    # 正数：指标越高越好，Plotly横向图从下往上画，所以用升序，最高分排在最上面
+                    positive_df = positive_df.sort_values(metric_col, ascending=True)
+                    # 负数：亏损越少越好，用降序，亏损最多的排最上面以起警示作用
+                    negative_df = negative_df.sort_values(metric_col, ascending=False)
+                
                     # 3. 创建 Streamlit 左右两栏布局
                     col_chart_left, col_chart_right = st.columns(2)
-
+                
                     # ==========================================
-                    # 🟢 左侧：正效益物业对比 (Positive Efficiency)
+                    # 🟢 左侧：正指标物业对比 (Positive)
                     # ==========================================
                     with col_chart_left:
-                        st.markdown("##### 🟢 Profit Ranking (正效益)")
+                        st.markdown("##### 🟢 Profit Ranking (盈利榜)")
                         if not positive_df.empty:
-                            pos_colors = ['#2F855A' if x == prop_id else '#A0AEC0' for x in positive_df['Property ID']] # 当前物业用深绿高亮，其余灰色
+                            pos_colors = ['#2F855A' if x == prop_id else '#A0AEC0' for x in positive_df['Property ID']]
                             
                             fig_pos = go.Figure(go.Bar(
-                                x=positive_df['Efficiency'],
+                                x=positive_df[metric_col],
                                 y=positive_df['Property ID'],
                                 orientation='h',
                                 marker_color=pos_colors,
-                                text=positive_df['Efficiency'].map('${:,.2f}'.format),
+                                text=positive_df[metric_col].map('${:,.2f}'.format),
                                 textposition='outside',
                                 customdata=positive_df['Type'],
-                                hovertemplate="<b>Property:</b> %{y}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
+                                hovertemplate=f"<b>Property:</b> %{{y}}<br><b>{hover_label}:</b> %{{x:$,.2f}}<extra></extra>"
                             ))
                             fig_pos.update_layout(
                                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                                 margin=dict(l=90, r=50, t=10, b=10),
                                 height=max(180, len(positive_df) * 40),
-                                xaxis=dict(title="Efficiency ($ / Unit)", tickformat='$,.0f', gridcolor='#E2E8F0'),
+                                xaxis=dict(title=metric_label, tickformat='$,.0f', gridcolor='#E2E8F0'),
                                 yaxis=dict(showgrid=False), font=dict(family="Inter, sans-serif", size=11)
                             )
                             st.plotly_chart(fig_pos, use_container_width=True, config={'displayModeBar': False})
                         else:
-                            st.info("大盘中暂无正效益的物业。")
-
+                            st.info("大盘中暂无盈利的物业。")
+                
                     # ==========================================
-                    # 🔴 右侧：负效益物业对比 (Negative Efficiency)
+                    # 🔴 右侧：负指标物业对比 (Negative Warning)
                     # ==========================================
                     with col_chart_right:
-                        st.markdown("##### 🔴 Loss Warning (负效益)")
+                        st.markdown("##### 🔴 Loss Warning (亏损预警)")
                         if not negative_df.empty:
-                            neg_colors = ['#E53E3E' if x == prop_id else '#CBD5E0' for x in negative_df['Property ID']] # 当前物业用深红高亮，其余淡灰
+                            neg_colors = ['#E53E3E' if x == prop_id else '#CBD5E0' for x in negative_df['Property ID']]
                             
                             fig_neg = go.Figure(go.Bar(
-                                x=negative_df['Efficiency'],
+                                x=negative_df[metric_col],
                                 y=negative_df['Property ID'],
                                 orientation='h',
                                 marker_color=neg_colors,
-                                text=negative_df['Efficiency'].map('${:,.2f}'.format),
+                                text=negative_df[metric_col].map('${:,.2f}'.format),
                                 textposition='outside',
                                 customdata=negative_df['Type'],
-                                hovertemplate="<b>Property:</b> %{y}<br><b>Efficiency:</b> %{x:$,.2f}/Unit<extra></extra>"
+                                hovertemplate=f"<b>Property:</b> %{{y}}<br><b>{hover_label}:</b> %{{x:$,.2f}}<extra></extra>"
                             ))
                             fig_neg.update_layout(
                                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                                 margin=dict(l=90, r=50, t=10, b=10),
                                 height=max(180, len(negative_df) * 40),
-                                xaxis=dict(title="Efficiency ($ / Unit)", tickformat='$,.0f', gridcolor='#E2E8F0'),
+                                xaxis=dict(title=metric_label, tickformat='$,.0f', gridcolor='#E2E8F0'),
                                 yaxis=dict(showgrid=False), font=dict(family="Inter, sans-serif", size=11)
                             )
                             st.plotly_chart(fig_neg, use_container_width=True, config={'displayModeBar': False})
                         else:
                             st.success("🎉 太棒了！大盘中没有亏损的物业。")
-
-                    st.caption(f"💡 注：彩色高亮柱状图（绿色/红色）为你当前选中的物业 **{prop_id}**。对比范围已自动限定为 **{current_type}** 类型。")
-            else:
-                st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
+                
+                    st.caption(f"💡 注：彩色高亮柱状图（绿色/红色）为你当前选中的物业 **{prop_id}**。当前视图为 **{metric_col}** 对比，范围限定为 **{current_type}** 类型。")
+                else:
+                    st.info(f"未在 PropertyRent.csv 中找到 {prop_id} 的历史租金数据。")
 
             st.write("---")
             st.subheader("⚠️ MH Portfolio Loss Analysis (Negative NOI)")
